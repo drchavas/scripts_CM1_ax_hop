@@ -1,0 +1,113 @@
+
+CM1 version 1 release 2:  17 February 2003.
+
+Summary of changes.
+
+-------------------------------------------------------------
+1.  New features.
+
+- Dynamic memory allocation for water/ice/turbulence arrays.
+  The program no longer allocates memory for arrays it does
+  not use.  Can save significant memory resources.
+
+- Ability for user to choose what data to output:  namelist.output
+
+- Ability for user to choose what stats to output:  namelist.stats
+
+
+-------------------------------------------------------------
+2.  New options.
+
+- Added ability to do restarts.  To save restart files, set rstfrq
+  (restart frequency) switch.  Then, to restart a simulation, set
+  irst=1 and set proper filename in subroutine read_restart.
+
+- Added option to use either 5th order advection or 6th order advection
+  (via advorder switch).  The 5th order scheme is implicitly diffusive:
+  the diffusion is proportional to wind speed, and inversely proportional
+  to grid spacing.  The 6th order scheme is not diffusive, but its use
+  requires an additional artificial filter for stability (idiff option).
+
+- Added switch for artifical diffusion term (idiff=0,1).  When idiff=1,
+  user must set difforder to 2 or 6, for 2nd order or sixth order, as
+  well as the diffusion constant via kdiff2 or kdiff6.
+
+- Added Smagorinsky turbulence closure (iturb=2).  The TKE closure is
+  still available (iturb=1).
+
+- Replaced dts variable from namelist.input:  user must instead
+  specify a new switch, nsound, the number of small time steps per
+  large step.  Only used if kwss=1.
+
+- Parallalized ice microphysics scheme.  Added support for new equation
+  set (neweqts=1) when ice microphysics is used.
+
+- Added switch ihail to namelist.input.  Only used when ptype=2.
+  For ihail=1, the large ice category is hail (fall velocities are
+  10-20 m/s).  For ihail=0, the large ice category is graupel (fall
+  velocities are 2-5 m/s).
+
+- Added new saturation adjustment scheme when using ice microphysics.
+  The new scheme calculates a saturation mixing ratio that is 
+  weighted between saturation wrt ice and saturation wrt water at
+  temperatures between about -40 and 0 Celsius.
+
+- Added simple surface fluxes of heat and moisture (isfcflx=1) and
+  simple surface drag on winds (idrag=1).
+
+- Separated ewbc into ebc and wbc, and nsbc into nbc snd sbc.
+
+- Added isothermal base state sounding (isnd=2).
+
+- Added constant lapse rate base sounding (isnd=3).
+
+- Added an idealized tropical cyclone initialization (isnd=6, iinit=6).
+
+- Added domain motion into namelist.input (imove, umove, vmove switches).
+
+- Added namelist.output.  User can select what date to output.  New
+  variables are:
+
+      - potential temperature perturbation
+      - pressure perturbation
+      - nondimensional pressure (pi, or Exner function)
+      - nondimensional pressure perturbation
+      - density
+      - density perturbation
+      - turbulence coefficient for momentum
+      - turbulence coefficient for scalars
+      - water vapor perturbation
+      - u perturbation
+      - v perturbation
+      - u interpolated to scalar points
+      - v interpolated to scalar points
+      - w interpolated to scalar points
+
+- Added namelist.stats.  User can select what stats to output.  New
+  variables include:
+
+      - max/min pressure perturbation
+      - max/min surface potential temperature perturbation
+      - max/min relative humidity with respect to ice
+      - max/min surface equivalent potential temperature
+      - max/min surface pressure
+      - max/min surface wind speed
+      - max vertical vorticity at:  sfc, 1 km, 2 km, 3km, 4km, and 5km
+
+
+-------------------------------------------------------------
+3.  Bug fixes.
+
+- Added support for new equation set with ice microphysics scheme
+  (neweqts=1 and ptype=2).
+
+- Added OpenMP parallelization with ice microphysics scheme.
+
+- Stats related to moisture are no longer computed when imoist=0.
+
+- Max/min cloud top now considers ice field when ice microphysics
+  is utilized.
+
+
+
+

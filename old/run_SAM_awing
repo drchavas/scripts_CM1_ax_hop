@@ -1,0 +1,95 @@
+#!/bin/tcsh
+#PBS -l nodes=4 		
+#PBS -q short   		
+#PBS -N test_SAM		
+#PBS -e test_SAM.stderr		
+#PBS -o test_SAM.stdout 	
+#PBS -M awing@mit.edu 		
+#PBS -m abe			
+#PBS -V 			
+
+#set job name
+set JOB_NAME = test_SAM
+
+#Add modules for Portland Group compiler, NetCDF, OpenMPI
+source /etc/profile.d/modules.csh
+module add pgi
+module add netcdf
+module add openmpi
+
+#Go to base SAM directory
+cd ~/SAM/SAM6.7.5
+echo -n "I am currently in directory "; pwd
+
+#Run model
+mpirun -n 4 -hostfile $PBS_NODEFILE ~/SAM/SAM6.7.5/SAM_RAD_CAM_MICRO_SAM1MOM
+
+############################################################################
+#Post-Processing
+#
+#copy output directory from ~/SAM/output to ~/SAM/$JOB_NAME
+cp ~/SAM/output ~/SAM/$JOB_NAME
+
+#Move timing  to new output directory
+mv timing.0 ~/SAM/$JOB_NAME/
+
+#Go to output directory
+cd ~/SAM/$JOB_NAME
+echo -n "I am currently in directory "; pwd
+ 
+# convert compressed files (extension .2Dcom, default format since files can be quite large) 
+# and binary (extension .2Dbin) to NETCDF files using 2Dcom2nc 
+# and 2Dbin2nc 
+# ----------------------------------
+# specify utility directory
+setenv UTIL_DIR ~/SAM/SAM6.7.5/UTIL
+
+
+#convert 1D file
+foreach file_name (./OUT_STAT/*.stat)
+  echo "*** file $file_name ***"
+  $UTIL_DIR/stat2nc $file_name
+end
+
+
+##convert 2D files
+#foreach file_name (./OUT_2D/*.2Dcom)
+#  echo "*** file $file_name ***"
+#  $UTIL_DIR/2Dcom2nc $file_name 
+#end
+
+
+##convert 3D files
+#foreach file_name (./OUT_3D/*.com3D)
+#  echo "*** file $file_name ***"
+#  $UTIL_DIR/com3D2nc $file_name 
+#end
+
+#Collect NetCDF files and move to subdirectory
+mkdir NC_files
+mkdir ./NC_files/OUT_STAT
+mkdir ./NC_files/OUT_2D
+mkdir ./NC_files/OUT_3D
+
+mv ./OUT_STAT/*nc ./NC_files/OUT_STAT/
+#mv ./OUT_2D/*nc ./NC_files/OUT_2D/
+#mv ./OUT_3D/*nc ./NC_files/OUT_3D/
+
+#clean up old output directory so model can be run again without recompiling 
+cd ~/SAM/output/OUT_2D
+rm *
+cd ~/SAM/output/OUT_3D
+rm *
+cd ~/SAM/output/OUT_STAT
+rm *
+cd ~/SAM/output/OUT_MOVIES
+rm *
+cd ~/SAM/output/OUT_MOMENTS
+rm *
+cd ~/SAM/output/RESTART
+rm *
+
+
+
+
+

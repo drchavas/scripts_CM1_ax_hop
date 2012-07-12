@@ -1,0 +1,33 @@
+
+CM1 version 1 release 4:  14 May 2003.
+
+Summary of changes.
+
+
+-------------------------------------------------------------
+1.  New options/features.
+
+- MPI support is added to this release (CompileType options 5 and 6).
+
+- Additional open raditative boundary condition has been added:  irbc=4.
+  It is based on the formulation presented in Durran and Klemp (1983).
+
+
+-------------------------------------------------------------
+2.  Changes, fixes, modifications.
+
+- Made minor modification to surface boundary condition in turbulence
+  code.
+
+- Increased default intercept for hail distribution in Goddard microphysics
+  scheme.  Tends to decrease total mass of hail and increase total mass of
+  snow in simulations of squall lines.
+
+- Made a minor change to saturation adjustment in Goddard code to ensure
+  qi and qc do not become negative.
+
+- Made a minor change in ifall=3 option of hydrometeor fallout code to
+  ensure surface rainfall accumulation cannot be negative.
+
+
+

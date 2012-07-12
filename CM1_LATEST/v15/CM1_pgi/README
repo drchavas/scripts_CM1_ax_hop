@@ -1,0 +1,42 @@
+
+
+RETURNING USERS:  please read the "CHANGES" file for a summary of 
+changes in this release.  Thank you.
+
+------------------------------------------------------------------------
+
+CM1 Numerical Model, Release 15  (cm1r15)
+13 January 2011
+ 
+Copyright (c) 2000-2011 by George H. Bryan, National Center for 
+Atmospheric Research, Boulder, Colorado, USA.  All Rights Reserved.
+ 
+ 
+Permission is granted for an individual or institution to use CM1
+provided that:
+ 
+    1) CM1 is not redistributed beyond your immediate working group
+       without permission.
+    2) Credit is given for any publications that result from the
+       use of CM1.
+    3) This copyright and no-warranty information is kept in a conspicuous
+       location and that all references to this notice are maintained.
+    4) The user agrees to the following NO WARRANTY notice.
+ 
+ 
+                             NO WARRANTY
+ 
+CM1 is provided by George Bryan on an "AS IS" basis and any warranties,
+either express or implied, including but not limited to implied warranties
+of noninfringement, originality, merchantability and fitness for a particular
+purpose, are disclaimed.  Neither George Bryan or the National Center for 
+Atmospheric Research (NCAR) will be obligated to provide the user with any 
+support, consulting, training, or assistance of any kind with regard to the 
+use, operation, and performance of CM1 nor to provide the user with any 
+updates, revisions, new versions, error corrections, or "bug" fixes.  In no 
+event will George Bryan and/or NCAR be liable for any damages, whatsoever, 
+whether direct, indirect, consequential, or special, which may result from 
+an action in contract, negligence, or other claim that arises out of or in 
+connection with the access, use, or performance of CM1, including 
+infringement actions.
+

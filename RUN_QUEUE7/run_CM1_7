@@ -1,0 +1,168 @@
+#!/bin/csh
+#PBS -l mppwidth=24         
+#PBS -l walltime=48:00:00
+#PBS -q regular
+#PBS -N drc_CM1_ax               
+#PBS -e drc_CM1.stderr          
+#PBS -o drc_CM1.stdout  
+#PBS -M drchavas@mit.edu                
+#PBS -m abe                     
+#PBS -V  
+
+cd $PBS_O_WORKDIR
+set numprocs = 1
+
+set runnum = 7   #This gets modified by SUPER.csh
+
+#set SCRATCH = "/data/drchavas/"
+
+cd ~/scripts_CM1_ax_hop/
+
+## START PROGRAM
+#set job name
+echo 'Hello!  You are running CM1!  Huzzah!'
+echo $PBS_JOBID
+
+#Add modules for Portland Group compiler, NetCDF, OpenMPI
+module add pgi
+module add netcdf
+#module add openmpi
+module add PrgEnv-pgi
+
+#why not, lets show a little nodefile
+echo $PBS_NODEFILE
+
+# How many procs do I have?
+#setenv NP `wc -l $PBS_NODEFILE | awk '{print $1}'`
+#echo 'num procs = '$NP
+
+# How many nodes do I have?
+#uniq $PBS_NODEFILE > machinefile.uniq.$PBS_JOBID 	# Create uniq hostfile for use in hybrid (MPI/OpenMP) codes and for rsh-script use
+#setenv NPU `wc -l machinefile.uniq.$PBS_JOBID | awk '{print $1}'`
+#echo 'num nodes = '$NPU 
+
+#define some variables
+set model = CM1
+echo $model
+set version = v15
+echo $version
+
+## Number the simulations so they dont try to access the same program subdirectory
+
+cd ~/scripts_CM1_ax_hop/
+
+## Let program know that the corresponding model is in use
+set info = 'RUNNING'
+echo $info > CM1ax${runnum}.active
+
+#name output simulation directory
+set files_dir = '~/scripts_CM1_ax_hop/RUN_QUEUE'
+set files_dir = ${files_dir}${runnum}
+
+##Copy over model and input files
+set outdir = `less ${files_dir}/run.name`
+rm ${files_dir}/run.name
+set outdir = "${outdir}${runnum}"
+
+mkdir $SCRATCH/CM1_output/ax/$outdir #create the output directory
+
+cp ${files_dir}/sfcphys.F  $SCRATCH/CM1_output/ax/CM1_ax${runnum}/v15/CM1_pgi/src/.
+cp ${files_dir}/init3d.F  $SCRATCH/CM1_output/ax/CM1_ax${runnum}/v15/CM1_pgi/src/.
+cp ${files_dir}/solve.F  $SCRATCH/CM1_output/ax/CM1_ax${runnum}/v15/CM1_pgi/src/.
+cp ${files_dir}/namelist.input  $SCRATCH/CM1_output/ax/CM1_ax${runnum}/v15/CM1_pgi/run/.
+cp ${files_dir}/input_sounding  $SCRATCH/CM1_output/ax/CM1_ax${runnum}/v15/CM1_pgi/run/.
+
+cp ${files_dir}/run_CM1_${runnum} $SCRATCH/CM1_output/ax/$outdir/.
+cp ${files_dir}/SUPER.csh $SCRATCH/CM1_output/ax/$outdir/.
+cp ${files_dir}/namelist_replace.csh $SCRATCH/CM1_output/ax/$outdir/.
+cp ${files_dir}/*.stdout $SCRATCH/CM1_output/ax/$outdir/.
+cp ${files_dir}/*.stderr $SCRATCH/CM1_output/ax/$outdir/.
+
+rm -r ${files_dir}
+
+## Recompile model
+cd $SCRATCH/CM1_output/ax/${model}_ax${runnum}/${version}/${model}_pgi/src/
+rm ../run/cm1.exe #remove old executable to ensure that the model only runs if it compiles correctly!
+#module add pgi
+module add netcdf
+#module add openmpi
+#module add PrgEnv-pgi
+make clean
+make
+cd ..
+
+echo $SCRATCH
+
+########################################################################################
+## Pre-Processing: copy data/input info into output directory for future reference
+
+## Output simulation info files into output directory ######
+cd $SCRATCH/CM1_output/ax/${model}_ax${runnum}/${version}/
+
+cp ./${model}_pgi/run/namelist.input ./${model}_pgi/run/input_sounding $SCRATCH/CM1_output/ax/$outdir/.
+
+less ./${model}_pgi/src/sfcphys.F | grep 'w1(i,j)=' > sfcphys.info
+less ./${model}_pgi/src/sfcphys.F | grep 'Ub_d = ' >> sfcphys.info
+less ./${model}_pgi/src/sfcphys.F | grep 'sfc flux reduction DRC' -A 6 >>sfcphys.info
+mv sfcphys.info $SCRATCH/CM1_output/ax/$outdir/.
+
+less ./${model}_pgi/src/init3d.F | grep '\!Initial vortex' -A 5 > $SCRATCH/CM1_output/ax/$outdir/ic.info
+echo '' >> $SCRATCH/CM1_output/ax/$outdir/ic.info
+less ./${model}_pgi/src/init3d.F | grep '\!Initial relative humidity anomaly' -A 6 >> $SCRATCH/CM1_output/ax/$outdir/ic.info
+
+less ./${model}_pgi/src/solve.F | grep 'thrad_drc =' -A 6 -B 5 > $SCRATCH/CM1_output/ax/$outdir/rad.info
+
+## Copy onefile.F to output directory
+cp ./${model}_pgi/run/onefile.F $SCRATCH/CM1_output/ax/$outdir/.
+
+## Go to output directory
+cd $SCRATCH/CM1_output/ax/$outdir
+#echo -n "I am currently in directory "; pwd
+
+## Output text file listing all differences between namelist.input and namelist.input_CTRL
+diff namelist.input ../namelist.input_CTRL > params_diff.info
+
+
+############################################################################
+## RUN MODEL
+
+#Go to output CM1 directory
+cd $SCRATCH/CM1_output/ax/${model}_ax${runnum}/${version}/${model}_pgi/run
+echo -n "Run model from"; pwd
+
+#Run model
+#mpirun -hostfile $PBS_NODEFILE $SCRATCH/CM1_output/ax/${model}_ax${runnum}/${version}/${model}_pgi/run/cm1.exe
+
+#To run 24 threads (Hopper; 4 for Franklin)
+setenv OMP_NUM_THREADS 24
+
+aprun -n $numprocs -d24 $SCRATCH/CM1_output/ax/${model}_ax${runnum}/${version}/${model}_pgi/run/cm1.exe
+
+#move model output data to output directory
+mv ./cm1out* ./proc* ./onefile.F $SCRATCH/CM1_output/ax/$outdir/.
+
+rm ~/scripts_CM1_ax_hop/CM1ax${runnum}.active
+
+
+############################################################################
+## Post-Processing
+
+## Move files to final output directory #######
+
+cd $SCRATCH/CM1_output/ax/$outdir
+
+#output text file listing variables in files
+module add pgi
+module add netcdf
+ncdump -h cm1out_0001.nc > filecontent.info
+
+mv $SCRATCH/CM1_output/ax/$outdir $SCRATCH/CM1_output/ax/DONE$outdir
+
+#move files for transfer to new folder "TRANSFER"
+#mkdir ./TRANSFER
+#mv ./cm1out_*.nc ./cm1out_stats.nc ./params_diff.info ./namelist.input ./input_sounding ./filecontent.info ./ic.info ./sfcphys.info ./run_CM1 ./TRANSFER/.
+#rm *.*
+
+#copy standard output and standard error files
+#cp ~/scripts_CM1_ax_hop/drc_CM1.std* $SCRATCH/CM1_output/ax/$outdir/TRANSFER/.
+

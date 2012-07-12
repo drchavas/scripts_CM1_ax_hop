@@ -1,0 +1,368 @@
+#!/bin/csh
+
+#PBS -q short
+#PBS -N drc_pgi_cm1_tests
+#PBS -l nodes=2:ppn=8,walltime=2:00:00
+#PBS -e drc_pgi_test.stderr
+#PBS -o drc_pgi_test.stdout
+#PBS -M drchavas@mit.edu
+##PBS -m abe
+#PBS -V
+
+#printenv
+
+#NAME OF OUTPUT SUB-DIRECTORY
+set PBS_JOBID = drc_pgi_test_netcdf
+echo $PBS_JOBID
+cat $PBS_JOBID
+
+# . /etc/profile.d/modules.sh
+
+#necessary modules (M Byrne, 2010)
+module add pgi/10.8
+module add mpich/10.6
+module add netcdf/3.6.2
+#module add pgi/10.4
+#module add mpiexec
+
+#not sure what this is
+setenv PBS_DEFAULT `echo $PBS_NODEFILE | awk -F. '{print $2}'`
+# PBS_DEFAULT=`echo $PBS_NODEFILE | awk -F. '{print $2}'`
+
+echo $PBS_NODEFILE
+cat $PBS_NODEFILE
+
+
+# How many procs do I have?
+setenv NP `wc -l $PBS_NODEFILE | awk '{print $1}'`
+
+# Create uniq hostfile for use in hybrid (MPI/OpenMP) codes and for rsh-script use
+#not sure what this is
+uniq $PBS_NODEFILE > machinefile.uniq.$PBS_JOBID
+
+# How many nodes do I have?
+setenv NPU `wc -l machinefile.uniq.$PBS_JOBID | awk '{print $1}'`
+
+echo $NP
+cat $NP
+echo $NPU
+cat $NPU
+
+set nproc = NP
+setenv model_type "CM1"
+model_type = 'CM1'
+setenv model_version "pgi"
+model_version = 'pgi'
+
+set echo 
+#--------------------------------------------------------------------------------------------------------
+limit stacksize unlimited
+
+cd /home/drchavas/$model_type/${model_type}_${model_version}/
+
+#set abs_list = (0.4 0.8)
+#set abs_list = (1.0)
+
+#file contains some environmental variables that can be used
+#source ./counter_info_abs_spinup
+
+#set del_sol = 1.2
+#set abs = $abs_list[$counter_abs]
+
+#alias MATH 'set \!:1 = `echo "\!:3-$" | bc`'
+#MATH ir_tau_eq   = $abs * 7.2
+#MATH ir_tau_pole = $abs * 1.8
+
+
+# define variables
+set platform  = pgi                                  # A unique identifier for your platform
+set expt      = cm1_test_run  # label for run, used to name output directory as $output_dir/$expt
+set workdir   = /home/drchavas/$model_type/${model_type}_tmp/workdir_$expt    # where model is run and model output is produced
+set output_dir  = /home/drchavas/$model_type/${model_type}_output/   # output directory will be created here
+#set num_script_runs = 2
+#set days = 500
+#set hours = 0
+
+#set init_cond = ""
+
+
+	# "$cwd:h" returns one directory above current working directory
+set execdir   = $cwd:h/$model_type/${model_type}_$model_version/src       # where code is compiled and executable is created
+set template  = $cwd:h/bin/mkmf_trial.template.$platform   # path to template for your platform
+set mkmf      = $cwd:h/bin/mkmf                      # path to executable mkmf
+set sourcedir = $cwd:h/src                           # path to directory containing model source code
+set pathnames = $cwd:h/input/pog_spectral_pathnames  # path to file containing list of source paths
+set diagtable = $cwd:h/input/mike_spinup_table_test  # path to diagnositics table
+set namelist  = $cwd:h/input/mike_spectral_namelist # path to namelist file
+set fieldtable = $cwd:h/input/pog_spectral_field_table_fv# path to field table (specifies tracers)
+set mppnccombine = $cwd:h/bin/mppnccombine.$platform # path to executable mppnccombine
+set time_stamp   = $cwd:h/bin/time_stamp.csh         # generates string date for file name labels
+
+set ireload     = 1                                  # resubmit counter
+#--------------------------------------------------------------------------------------------------------
+
+# compile mppnccombine.c, needed only if $npes > 1
+if ( ! -f $mppnccombine ) then
+ # gcc -O -o $mppnccombine -I/home/pog/include -L/home/pog/lib/ $cwd:h/postprocessing/mppnccombine.c -lnetcdf
+ #  gcc -O -o $mppnccombine -I/usr/local/pkg/ -L/usr/local/pkg/netcdf/netcdf-3.6.1/icc/lib $cwd:h/postprocessing/mppnccombine.c -lnetcdf
+   pgcc -O -o $mppnccombine -I/usr/include -I/home/software/pgi/pgi-packages/pgi-10/netcdf/netcdf-3.6.2/include -L/home/software/pgi/pgi-packages/pgi-10/netcdf/netcdf-3.6.2/lib $cwd:h/postprocessing/mppnccombine.c -lnetcdf
+endif
+
+#--------------------------------------------------------------------------------------------------------
+
+# if exists, load reload file 
+:<<COMMENT
+set reload_file = $output_dir/$expt/reload_commands
+
+if ( -d $output_dir/$expt )  then
+  if ( -f $reload_file ) then
+     source $reload_file
+  endif
+endif
+COMMENT
+#--------------------------------------------------------------------------------------------------------
+
+# setup directory structure
+if ( ! -d $execdir ) mkdir $execdir
+
+if ( ! -e $workdir ) then
+  mkdir $workdir $workdir/INPUT $workdir/RESTART
+else
+  rm -rf $workdir
+  mkdir $workdir $workdir/INPUT $workdir/RESTART
+  echo "ERROR: Existing workdir may contaminate run.  Move or remove $workdir and try again."
+#  exit 1
+endif
+
+if ( ! -d $output_dir/$expt )  then
+  mkdir -p $output_dir/$expt
+  mkdir -p $output_dir/$expt/history
+  mkdir -p $output_dir/$expt/restart
+  mkdir -p ${output_dir}/${expt}/out_err_files/
+endif
+
+# MB additions for w_buck restart file (MB 19/3/10)
+ if ( -f $output_dir/$expt/restart/bucket_depth.res.nc ) then
+	mv $output_dir/$expt/restart/bucket_depth.res.nc $workdir/RESTART/bucket_depth.res.nc
+        mv $output_dir/$expt/restart/bucket_depth_init_test.res.nc $workdir/RESTART/bucket_depth_init_test.res.nc
+ endif
+
+#--------------------------------------------------------------------------------------------------------
+
+:<<COMMENT
+
+
+# compile the model code and create executable
+
+cd $execdir
+$mkmf -p fms.x -t $template -c "-Duse_libMPI -Duse_netCDF" -a $sourcedir $pathnames
+make -f Makefile
+cd $workdir
+
+#--------------------------------------------------------------------------------------------------------
+
+# set initial conditions and move to executable directory
+
+if ( $init_cond != "" ) then
+  cd INPUT
+  cp $init_cond $init_cond:t
+  cpio -iv  < $init_cond:t
+  rm -f $init_cond:t
+endif
+
+cd $workdir    
+#--------------------------------------------------------------------------------------------------------
+
+# set run length and time step, get input data and executable
+
+cat > input.nml <<EOF
+ &main_nml
+     days   = $days,
+     hours = $hours,
+     dt_atmos = 600 /
+EOF
+
+cat >> input.nml <<EOF
+
+ &atmosphere_nml
+     two_stream = .true.,
+     turb = .true.,
+     ldry_convection = .false.,
+     lwet_convection = .true.,
+     mixed_layer_bc = .true.,
+     do_virtual = .true.,
+     roughness_mom =  5e-03,
+     roughness_heat =  1e-05,
+     roughness_moist =  1e-05  /
+     lat_limit_lower = -90.0, # Limits added by MB 7/3/10
+     lat_limit_upper = 90.0,
+     lon_limit_lower = 170.0,
+     lon_limit_upper = 190.0 /
+
+ &spectral_init_cond_nml
+  initial_temperature      = 280.0 /
+
+ &radiation_nml
+  albedo_value                  = 0.38,
+  window                        = 0.0,
+  linear_tau                    = 0.2,
+  atm_abs                       = 0.22,
+  wv_exponent                   = 4.0,
+  solar_exponent                = 2.0,
+  ir_tau_pole                   = ${ir_tau_pole},
+  ir_tau_eq                     = ${ir_tau_eq},
+  del_sol                       = ${del_sol}/
+
+ &mixed_layer_nml
+  qflux_amp = 0.0,
+  qflux_width = 16.0,
+  depth = 1.0,
+  evaporation = .true. /
+
+ &dargan_bettsmiller_nml
+  tau_bm                   = 7200.0,
+  rhbm                     = 0.7,
+  do_virtual               = .true.,
+  do_bm_shift              = .false.,
+  do_shallower             = .true./
+
+ &lscale_cond_nml
+  do_evap                  = .false./
+
+
+
+EOF
+cat $namelist >> input.nml
+cp $diagtable diag_table
+cp $fieldtable field_table
+cp $execdir/fms.x fms.x
+
+#--------------------------------------------------------------------------------------------------------
+# cd to the working directory from which the job was submitted
+#
+#cd $execdir
+
+# How many procs do I have?
+#setenv NP `wc -l $PBS_NODEFILE | awk '{print $1}'`
+ 
+# Create uniq hostfile for use in hybrid (MPI/OpenMP) codes and for rsh-script use
+#uniq $PBS_NODEFILE > machinefile.uniq.$PBS_JOBID
+ 
+# How many nodes do I have?
+#setenv NPU `wc -l machinefile.uniq.$PBS_JOBID | awk '{print $1}'`
+
+#--------------------------------------------------------------------------------------------------------
+
+# run the model with mpirun
+#mpirun.lsf -np $nproc ${workdir}/fms.x
+#mpirun -np $nproc ${workdir}/fms.x
+#mpiexec -comm p4 -n $nproc ${workdir}/fms.x
+
+#  Try using mpirun instead of mpiexec
+# mpirun -machinefile machinefile.uniq.$PBS_JOBID -v -np $NP ${workdir}/fms.x
+mpirun -machinefile $PBS_NODEFILE -v -np $NP ${workdir}/fms.x # Correct one!
+# mpif90 -machinefile $PBS_NODEFILE -v -np $NP ${workdir}/fms.x
+#--------------------------------------------------------------------------------------------------------
+
+#   --- generate date for file names ---
+
+set date_name = `$time_stamp -eh`
+if ( $date_name == "" ) set date_name = tmp`date '+%j%H%M%S'`
+if ( -f time_stamp.out ) rm -f time_stamp.out
+
+#--------------------------------------------------------------------------------------------------------
+
+#   --- move output files to their own directories (don't combine) ---
+
+mkdir $output_dir/$expt/history/$date_name
+
+foreach ncfile ( `/bin/ls *.nc *.nc.????` )
+  mv $ncfile $output_dir/$expt/history/$date_name/$date_name.$ncfile
+end
+
+#remove data from first 100 days:
+if ($ireload < $num_script_runs) then
+  rm -rf $output_dir/$expt/history/$date_name/ 
+endif
+
+#   --- save ascii output files to local disk ---
+
+foreach out (`/bin/ls *.out`)
+  mv $out $output_dir/$expt/$date_name.$out
+end
+
+#   --- move restart files to output directory --- 
+
+cd RESTART
+set resfiles = `/bin/ls *.res*`
+if ( $#resfiles > 0 ) then
+#     --- desired filename for cpio of output restart files ---	
+  set restart_file = $output_dir/$expt/restart/$date_name.cpio
+  if ( ! -d $restart_file:h ) mkdir -p $restart_file:h
+#     --- also save namelist and diag_table ---
+  cp $workdir/{*.nml,diag_table} .
+  set files = ( $resfiles input.nml diag_table )
+  /bin/ls $files | cpio -ocv > $restart_file:t
+  mv $restart_file:t $restart_file
+#     --- set up restart for next run ---
+endif
+
+# Moving restart file (and the test file) to the output directory (MB 19/3/10)
+ mv bucket_depth.res.nc $output_dir/$expt/restart/bucket_depth.res.nc 
+ mv bucket_depth_init_test.res.nc $output_dir/$expt/restart/bucket_depth_init_test.res.nc 
+
+cd $workdir
+
+#--------------------------------------------------------------------------------------------------------
+
+#   --- write new reload information ---
+
+if ( -f $reload_file ) mv -f $reload_file $reload_file"_prev"
+
+@ ireload++
+
+echo   "set init_cond    =  $restart_file"  >> $reload_file
+echo   "set ireload      =  $ireload"       >> $reload_file
+
+############################# post processing ############################
+
+cd /home/byrnem/$fms_version/scripts/
+
+if($ireload > 2) then # combine data and do serial analysis
+                                                                                
+  echo "set del_sol = $del_sol"    > ./post_processing_info_spinup
+  echo "set abs = $abs" >> ./post_processing_info_spinup
+  echo "set date_name = $date_name" >> ./post_processing_info_spinup
+  echo "set fms_version = $fms_version" >> ./post_processing_info_spinup
+                                                                                
+  qsub  /home/byrnem/serial_analysis_moist/run/run_abs_spinup_trial
+
+endif
+
+cd /home/byrnem/$fms_version/scripts/
+
+if ( $ireload > $num_script_runs ) then
+
+  @ counter_abs++
+  echo "set counter_abs = $counter_abs" > ./counter_info_abs_spinup
+
+endif
+
+if ($counter_abs > $#abs_list && $ireload > $num_script_runs) then
+  #echo "Note: not resubmitting job"
+#  qsub < /home/pog/$fms_version/scripts/run_abs1
+else
+  echo "Submitting run with abs = $abs_list[$counter_abs]"
+  qsub  /home/byrnem/$fms_version/scripts/mike_pgi_script
+endif
+
+rm -rf $workdir
+
+# Cleanup
+# Remove the unique machinefiles
+rm $execdir/machinefile.uniq.$PBS_JOBID
+
+# move stdout and stderr to the output directory
+bpeek $LSB_JOBID > ${output_dir}/${expt}/out_err_files/out_err.${date_name}
+
+COMMENT

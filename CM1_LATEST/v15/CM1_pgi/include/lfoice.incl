@@ -1,0 +1,148 @@
+! This is from the 091406 version of lfoice.F which defines all constants within the wrapper
+! It seems to work without problems.
+
+!
+! User-Changeable parameters
+!
+      real cwdiap, qcmincwrn, cwdisp ; parameter( cwdiap=20.e-6, qcmincwrn = 2.0e-3, cwdisp = 0.15 )
+      integer autoconversion ; parameter( autoconversion = 0 )
+      real rwdn, cnor ; parameter(rwdn = 1000., cnor = 8.0e6) ! rain params
+      real swdn, cnos ; parameter(swdn =  100., cnos = 3.0e6) ! snow params
+      real hwdn, cnoh ; parameter(hwdn =  900., cnoh = 4.0e4) ! hail params
+!
+
+ 
+! Air pressure, density, & Exner function
+      real rho00
+
+! Biggs
+      real arz, brz
+
+! Bergeron Process
+
+      real cs10(32),cs11(32)
+      real bfa1(32),bfa2(32),cbtim(32)
+      real cmn, cmi40, cmi50, ri50, vti50, atemp, cm50a, cm40b, cm50b, bsfw
+      integer ibb
+!   Koenig (1971) was corrected at T=-14 C (fifteenth index of bfa1) from 0.1725e-6 to 0.1725e-4 after a reviewer noted a typo.
+      data bfa1/0., 0.7939E-7, 0.7841E-6, 0.3369E-5, 0.4336E-5, 0.5285E-5, 0.3728E-5, 0.1852E-5, 0.2991E-6, 0.4248E-6,   &
+         0.7434E-6, 0.1812E-5, 0.4394E-5, 0.9145E-5, 0.1725E-4, 0.3348E-4, 0.1725E-4, 0.9175E-5, 0.4412E-5, 0.2252E-5,   &
+         0.9115E-6, 0.4876E-6, 0.3473E-6, 0.4758E-6, 0.6306E-6, 0.8573E-6, 0.7868E-6, 0.7192E-6, 0.6513E-6, 0.5956E-6,   &
+         0.5333E-6, 0.4834E-6/
+      data bfa2/0., 0.4006,    0.4831,    0.5320,    0.5307,    0.5319,    0.5249,    0.4888,    0.3894,    0.4047,      &
+         0.4318,    0.4771,    0.5183,    0.5463,    0.5651,    0.5813,    0.5655,    0.5478,    0.5203,    0.4906,      &
+         0.4447,    0.4126,    0.3960,    0.4149,    0.4320,    0.4506,    0.4483,    0.4460,    0.4433,    0.4413,      &
+         0.4382,    0.4361/
+
+! Accretions
+
+      real xacwi
+      real xcnos,xcnoh,xcnor
+      real xxacx
+
+! Evaporation/Deposition/Sublimation
+
+      real xrcev1
+
+! Initiation of cloud ice
+
+      real xiint
+
+! Initiation
+
+      real cwmasn,cwmasx
+      real cimasn,cimasx
+
+! Melting/Wet growth of hail, Melting snow
+
+      real xvth3
+      real xmlt3
+      real xxmlt1
+
+!  Distribution parameters, Fallout, Mean diameter's, mass, and mixing ratio's
+
+      real xslop
+ 
+
+! Fallout, fall velocity parameters/vars
+
+      real xvtr,xvts,xvth1
+
+
+! Misc constants
+
+      real advisc0,advisc1
+      real elv,elf,els
+      real ar,br,bta1,cs,ds
+      real cbi,cbw,cnit,c1f3,cwc1
+      real gf6,gf5,gf4,gf3,gf2,gf1,gf4ds,gf4br,gf4p5,gf5ds,gf5br,gf5p5,gf2p75
+      real pid4
+      real dragh
+      real tfr,thnuc,tfrcbw,tfrcbi,tka0
+      real cw, cpinv
+
+
+! Saturation lookup table, vapor pressures, ratio's
+
+      integer nqsat, lll
+      parameter(nqsat=20001)
+      real tabqvs(nqsat),tabqis(nqsat)
+      real fqsat, temq
+      parameter (fqsat=0.01)
+      real cai, caw
+
+
+! Saturation Adjustment
+
+      real cqv1,cqv2
+
+
+! Species threshold,  mass,    mass constraints
+
+      real qcmin,qhmin,qimin,qrmin,qsmin
+      real qccrit, qscrit, qicrit
+
+! Functions
+
+      real gamma
+      external gamma
+
+!-----------------------------------------
+!  stuff added by George Bryan, 060929:
+      real :: poo,pi,dnz00,cpi,cwdn
+      integer :: outfile
+      real g, cp, cv, rd, rw, rcp ; parameter (g=9.81, cp=1004.0, rd=287.0, cv=cp-rd, rw=461.5, rcp=rd/cp)
+!-----------------------------------------
+
+      common /lfoparams/                                                      &
+              rho00,                                                          &
+              arz, brz,                                                       &
+              cs10,cs11,cbtim,                                                &
+              bsfw,                                                           &
+              xacwi,xcnos,xcnoh,xcnor,xxacx,                                  &
+              xrcev1,                                                         &
+              xiint,                                                          &
+              cwmasn,cwmasx,cimasn,cimasx,                                    &
+              xvth3, xmlt3, xxmlt1,                                           &
+              xslop,                                                          &
+              xvtr,xvts,xvth1,                                                &
+              advisc0,advisc1,                                                &
+              elv,elf,els,                                                    &
+              ar,br,bta1,cs,ds,                                               &
+              cbi,cbw,cnit,c1f3,cwc1,                                         &
+              gf6,gf5,gf4,gf3,gf2,gf1,                                        &
+              gf4ds,gf4br,gf4p5,gf5ds,gf5br,gf5p5,gf2p75,                     &
+              pid4,                                                           &
+              dragh,                                                          &
+              tfr,thnuc,tfrcbw,tfrcbi,tka0,                                   &
+              cw,                                                             &
+              tabqvs, tabqis,                                                 &
+              cai, caw,                                                       &
+              cqv1,cqv2,                                                      &
+              qcmin,qhmin,qimin,qrmin,qsmin,                                  &
+              qccrit, qscrit, qicrit,                                         &
+!-----------------------------------------
+!  stuff added by George Bryan, 060929:
+              poo,pi,dnz00,cpi,cwdn,outfile
+!-----------------------------------------
+

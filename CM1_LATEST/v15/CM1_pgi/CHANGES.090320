@@ -1,0 +1,97 @@
+
+CM1 version 1 release 13:  20 March 2009.
+
+Summary of changes.
+
+-------------------------------------------------------------
+1.  New options/features.
+
+ - Added a variable to namelist.input, called cecd, that allows the user
+   to choose various settings for the surface exchange coefficients for 
+   enthalphy (Ce) and momentum (Cd).  See README.namelist for more 
+   information. 
+
+ - Added the ability to output reflectivity (dBZ) that is consistent with
+   the assumptions/settings in the microphysics scheme.  To enable, user
+   must set output_dbz=1 in namelist.input.  It is only available for the
+   Goddard-LFO, Thompson, and Morrison microphysics schemes (ptype=2,3,5
+   respectively). 
+
+ - Replaced the Thompson microphysics scheme with a new version.  The
+   primary change for the new version is the use of double-moment rain 
+   (in addition to double-moment ice crystals, as before;  all other 
+   categories of water are still single-moment).
+
+ - Added a new variable (xhd) to namelist.input so user can set the width 
+   of the Rayleigh damper near horizontal boundaries (for hrdamp=1).  See 
+   README.namelist for more information.
+
+
+-------------------------------------------------------------
+2.  Changes, fixes, modifications, etc.
+
+ - Fixed a potentially serious problem when using isnd = 7.  This only
+   affects simulations in which base-state winds were not equal to zero.
+   Thanks to Dan Kirshbaum (U. Reading) and Leigh Orf (Central Michigan U.)
+   for helping identify and debug this problem.  (base.F)
+
+ - Generalized the code that sets the Rayleigh damper near horizontal
+   boundaries (hrdamp=1).  The code should now work properly for 3d
+   simulations, rectangular domains, 3d MPI, etc.   Thanks to David 
+   Ryglicki (Florida State U.) for helping identify the problem and 
+   helping test new versions of this code.  (param.F)
+
+ - Fixed the units on precipitation when using the Thompson microphysics
+   scheme.  (Previous version of cm1 was outputting precip in mm, not 
+   cm as advertised.)  Thanks to Leigh Orf (Central Michigan U.) for 
+   identifying this problem.  (thompson.F)
+
+ - Updated the Morrison double-moment microphysics scheme (ptype = 5).
+   Thanks to Hugh Morrison (NCAR) for providing this code.  (morrison.F)
+
+ - The ihail switch (see README.namelist) now works with the Morrison 
+   microphysics scheme.  (morrison.F, param.F)
+
+ - Fixed a bug in the autoconversion calculation of the GSR-LFO scheme 
+   (ptype=4).  Thanks to Ted Mansell and Matt Gilmore.  (lfoice.F)
+
+ - Fixed a minor bug with the positive-definite moisture scheme.  Thanks 
+   to Dan Kirshbaum (U. Reading) for finding this problem.  (adv6.F)
+
+ - Made another minor change to positive-definite moisture advection to 
+   increase performance.  Very small affect on results.  (integ.F)
+
+ - Made some performance enhancements to pressure solver.  No change on
+   results.  (sound.F, sounde.F, soundns.F)
+
+ - Fixed a minor bug with passive tracer output for dry simulations
+   (imoist=0 only).  (statpack.F)
+
+ - Fixed some minor bugs associated with mass stats for axisymmetric 
+   model runs.  (No change on results ... only change on stats output.)
+   (solve.F, kessler.F, sfcphys.F)
+
+ - Fixed an error with the calculation of total condensation when 
+   neweqts=2.  (No change on results ... only change on stats output.)
+   (solve.F)
+
+ - Modified the idealized tropical cyclone initialization to keep the 
+   relative humidity constant across the vortex.  (init3d.F)
+
+ - Code now outputs Cd and Ce (surface exchange coefficients for momentum
+   and enthalpy, respectively) when output_sfcflx = 1.  (several files)
+
+ - Fixed a problem with netcdf output of zh array when using terrain.  
+   Thanks to Dan Kirshbaum (U. Reading) for finding this.  (writeout_nc.F)
+
+ - Fixed a minor bug with netcdf output of qvpert.  Thanks to Glen Romine
+   (U. Illinois) for finding this bug.  (writeout_nc.F)
+
+ - Made several improvements to the skew-T script (plotskew.gs) for GrADS users 
+   (See http://www.mmm.ucar.edu/people/bryan/cm1/grads/), including:
+     - Corrected the units of wind speed (it's now in knots)
+     - Don't allow dewpoint depression to exceed 75 C.  For some reason,
+       this improves the CAPE calculation in very dry environments.
+     - Made some other minor changes to improve file handling.
+
+

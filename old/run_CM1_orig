@@ -1,0 +1,82 @@
+#!/bin/csh
+#PBS -l nodes=1:ppn=1,walltime=24:00:00		
+#PBS -q long	
+#PBS -T hyperthread
+#PBS -N drc_CM1		
+#PBS -e drc_CM1.stderr		
+#PBS -o drc_CM1.stdout 	
+#PBS -M drchavas@mit.edu 		
+#PBS -m abe			
+#PBS -V 			
+
+#set job name
+set JOB_NAME = most_recent_run
+echo 'Hello!  You are running a program!  Huzzah!'
+echo $PBS_JOBID
+
+#Add modules for Portland Group compiler, NetCDF, OpenMPI
+source /etc/profile.d/modules.csh
+module add pgi
+module add netcdf
+module add openmpi
+
+#why not, lets show a little nodefile
+echo $PBS_NODEFILE
+
+# How many procs do I have?
+#setenv NP `wc -l $PBS_NODEFILE | awk '{print $1}'`
+#echo 'num procs = '$NP
+
+# How many nodes do I have?
+#uniq $PBS_NODEFILE > machinefile.uniq.$PBS_JOBID 	# Create uniq hostfile for use in hybrid (MPI/OpenMP) codes and for rsh-script use
+#setenv NPU `wc -l machinefile.uniq.$PBS_JOBID | awk '{print $1}'`
+#echo 'num nodes = '$NPU 
+
+#define some variables
+set model = CM1
+echo $model
+set version = v15
+echo $version
+
+## Extract output directory name from file outdir.info #####
+cd ~/
+
+set runnum = `less runnum.info`
+rm runnum.info
+
+set outdir = `less outdir.info`
+rm outdir.info
+
+############################################################################
+## RUN MODEL
+
+#Go to output CM1 directory
+cd ~/${model}_ax${runnum}/${version}/${model}_pgi/run
+echo -n "Run model from"; pwd
+
+#Run model
+mpirun -hostfile $PBS_NODEFILE ~/${model}_ax${runnum}/${version}/${model}_pgi/run/cm1.exe
+
+#move model output data to output directory
+mv ./cm1out* ./proc* /data/drchavas/CM1_output/ax/$outdir/.
+
+rm ~/CM1ax${runnum}.active
+
+############################################################################
+#Post-Processing
+
+## Move files to final output directory #######
+
+cd /data/drchavas/CM1_output/ax/$outdir
+
+#output text file listing variables in files
+module add pgi
+module add netcdf
+ncdump -h cm1out_0001.nc > filecontent.info
+
+#move files for transfer to new folder "TRANSFER"
+mkdir ./TRANSFER
+mv ./cm1out_*.nc ./cm1out_stats.nc ./params_diff.info ./namelist.input ./input_sounding ./filecontent.info ./ic.info ./TRANSFER/.
+rm *.*
+
+

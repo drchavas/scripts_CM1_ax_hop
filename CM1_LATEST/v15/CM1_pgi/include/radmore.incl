@@ -1,0 +1,6 @@
+
+  integer, parameter :: radstgr  = 0  ! this must be 0 in CM1
+  integer, parameter :: radshade = 0  ! this must be 0 in CM1
+  integer, parameter :: rlwopt   = 1  ! 1 = "high"  (recommended)
+                                      ! 0 = "low"
+

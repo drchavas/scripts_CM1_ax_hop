@@ -1,0 +1,92 @@
+
+CM1 version 1 release 14:  23 October 2009.
+
+Summary of changes.
+
+-------------------------------------------------------------
+1.  New options/features.
+
+ - When netcdf output format is requested (output_format = 2), ALL data
+   files are written in netcdf format.  (Now including stats and parcel
+   trajectory data files.)
+
+ - The Thompson microphysics scheme (ptype=3) and the Morrison microphysics
+   scheme (ptype=5) now both work with the energy-conserving equation set 
+   (neweqts >= 1).  Both schemes still use original formulation for neweqts=0.
+
+ - Added the ability to use a vertically implicit integration scheme for
+   turubulent diffusion.  (See vimpl in README.namelist)  This scheme is
+   absolutely stable, and is useful when vertical grid spacing is very
+   small (dz < 100 m).
+
+ - Added a new stat output:  radius of maximum azimuthal velocity for 
+   axisymmetric model simulations.  To use, set stat_rmw in namelist.input.
+
+ - New documentation is available:  "The Governing Equations for CM1"
+   Available at the CM1 website:  http://www.mmm.ucar.edu/people/bryan/cm1/
+
+
+-------------------------------------------------------------
+2.  Changes, fixes, modifications, etc.
+
+ - Made some minor changes and upgrades to the Thompson microphysics scheme
+   (ptype=3).  The scheme is now identical to the version in WRFV3.1.1.  
+   (thompson.F)
+
+ - Made some minor fixes and upgrades to the Morrison microphysics scheme
+   (ptype=5).  Reflectivity is no longer cut off at ~15 dBZ.  (morrison.F)
+
+ - Made some small changes to the pressure equation to better account for 
+   mass conservation.  Small affect on results unless simulations are very 
+   long (> 10 days).  Thanks to Hamish Ramsey (Columbia Univ) for identifying 
+   this problem.  (solve.F)
+
+ - Fixed a minor bug to ensure that Rayleigh damping near horizontal
+   boundaries (hrdamp=1) is applied even when upper-level Rayleigh damping 
+   is not used (irdamp=0).  (solve.F)
+
+ - Changed loop indices for calculation of some base-state soundings to 
+   prevent floating-point error.  Thanks to Adam French (NCSU) for 
+   identifying this problem.  (base.F)
+
+ - Modified the parameterized turbulence scheme (iturb=3) so that it works
+   with 3d simulations.  (Previously, iturb=3 only worked with axisymmetric
+   simulations.)  (turbtke.F, solve.F)
+
+ - Made some minor changes to correct mass/energy budgets.  Only affects 
+   stats output.  Does not change results of simulations.  (multiple files)
+
+ - Made a slight change in calculation of moist Brunt-Vaisala frequency to 
+   prevent aggressive generation of subgrid turbulence in some ice-phase
+   environments.  Thanks to Dan Kirshbaum (U. Reading) for identifying 
+   this problem.  (turbtke.F)
+
+ - Made a minor change to the upper and lower boundary conditions of the 
+   weno advection scheme to prevent excessive dissipation near those 
+   boundaries.  (weno.F)
+
+ - Updated the netcdf writeout routine.  Removed obsolete netcdf commands.
+   These changes should address problems that some users have reported.  
+   (writeout_nc.F)
+
+ - Made a small change to better conserve energy during fallout when 
+   efall=1 is selected.  (A forthcoming article will explain this option
+   in more detail.)  (kessler.F)
+
+ - Made some relatively minor bug fixes to the parcel driver (iprcl=1).
+   It should work properly now for axisymmetric simulations, and for
+   simulations without moisture.  (parcel.F)
+
+ - Checked that certain analytic soundings and 3d initial conditions work 
+   properly in dry environments (i.e., when imoist=0).  (base.F, init3d.F)
+
+ - Added compiler flags and settings in the Makefile for different kinds 
+   of linux clusters (including Intel compiler and PathScale compiler).
+   (Makefile)
+
+ - Updated the skew-T/log-p plotting program for GrADS that is available
+   on the CM1 webpage.  Among other changes, CAPE and CIN are now calculated 
+   more accurately.  Thanks to Bob Hart (Florida State Univ) for updating 
+   his skew-T script.  (plotskew.gs)
+
+

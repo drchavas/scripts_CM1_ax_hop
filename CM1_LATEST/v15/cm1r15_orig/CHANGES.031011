@@ -1,0 +1,37 @@
+
+CM1 version 1 release 6:  11 October 2003.
+
+Summary of changes.
+
+
+-------------------------------------------------------------
+1.  New options/features.
+
+- Added the ability to advect scalars (potential temperature, moisture,
+and TKE) with a fifth-order Weighted Essentially Non-Oscillatory (WENO)
+scheme (advweno=1).
+
+- Added the ability to run the model in Direct Numerical Simulation (DNS)
+mode (dns=1).  There are six new parameters in namelist.input (in the
+param7 section) that need to be set for dns runs.  See README.namelist
+for more information.
+
+- Added a new stat field:  stat_qsrc.  This option accounts for moisture
+sources that are not associated with the microphysics scheme, including:
+artificial sources due to non-positive-definiteness of numerics;  and,
+sources/sinks of moisture through open boundary conditions.
+
+- Added option pdscheme=1, a nearly mass-conserving scheme that ensures
+positive-definiteness of moisture variables due to advection.
+
+- Added dry, constant d-theta/dz sounding (isnd=8).
+
+- Added option to apply artificial diffusion to winds only (idiff=2).
+
+
+-------------------------------------------------------------
+2.  Changes, fixes, modifications, etc.
+
+- No minor changes or modifications, or any bug fixes to report.  (wow)
+
+

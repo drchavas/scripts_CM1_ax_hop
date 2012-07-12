@@ -1,0 +1,53 @@
+
+      real, parameter :: g      = 9.81
+      real, parameter :: to     = 273.15
+      real, parameter :: rd     = 287.04
+      real, parameter :: rv     = 461.5
+      real, parameter :: cp     = 1005.7
+      real, parameter :: cpinv  = 1.0/cp
+      real, parameter :: cv     = cp-rd
+      real, parameter :: cpv    = 1870.0
+      real, parameter :: cvv    = cpv-rv
+      real, parameter :: p00    = 1.0e5
+      real, parameter :: rp00   = 1.0/p00
+      real, parameter :: rcp    = 1.0/cp
+      real, parameter :: pi     = 3.14159265358979323
+      real, parameter :: cpdcv  = cp/cv
+      real, parameter :: rovcp  = rd/cp
+      real, parameter :: rddcp  = rd/cp
+      real, parameter :: rddcv  = rd/cv
+      real, parameter :: rddrv  = rd/rv
+      real, parameter :: cvdrd  = cv/rd
+      real, parameter :: cpdrd  = cp/rd
+      real, parameter :: eps    = rd/rv
+      real, parameter :: reps   = rv/rd
+      real, parameter :: repsm1 = rv/rd-1.0
+      real, parameter :: cpt    = (cpv/cp)-1.0
+      real, parameter :: cvt    = (cvv/cv)-1.0
+      real, parameter :: pnum   = (cp*rv)-(cpv*rd)
+      real, parameter :: xlv    = 2501000.0
+      real, parameter :: lathv  = xlv
+      real, parameter :: xls    = 2834000.0
+      real, parameter :: lvdcp  = xlv/cp
+      real, parameter :: condc  = xlv*xlv/(rv*cp)
+      real, parameter :: cpl    = 4190.0
+      real, parameter :: cpi    = 2106.0
+      real, parameter :: lv1    = xlv+(cpl-cpv)*to
+      real, parameter :: lv2    = cpl-cpv
+      real, parameter :: ls1    = xls+(cpi-cpv)*to
+      real, parameter :: ls2    = cpi-cpv
+      real, parameter :: govtwo = 0.5*g
+      real, parameter :: piddeg = pi/180.0
+      real, parameter :: degdpi = 180.0/pi
+      real, parameter :: clwsat = 1.e-6
+      real, parameter :: rhow   = 1.0e3
+
+      ! Implicit vertical diffusion.  For vialpha:
+      !      0.0 = explicit forward-in-time (unstable if K dt / (dz^2) > 0.5)
+      !      0.5 = implicit centered-in-time (Crank-Nicholson)
+      !      1.0 = implicit backward-in-time (implicit Euler)
+      real, parameter :: vialpha = 1.0
+
+      ! DO NOT CHANGE VIBETA:
+      real, parameter :: vibeta = 1.0 - vialpha
+

@@ -1,0 +1,56 @@
+
+CM1 version 1 release 3:  16 March 2003.
+
+Summary of changes.
+
+
+-------------------------------------------------------------
+1.  New options/features.
+
+- Added option to select machine type in compile script, with default
+  compiler flags and options.  Makes code easier to move between
+  machines.
+
+- Modified timer to be platform-independent.  User no longer needs to
+  modify the "mytime" subroutine.
+
+- Added option to integrate passive fluid tracers (iptra=1).
+
+- Added option to output maximum integrated surface wind speed
+  (output_sws=1).
+
+- Added option to output total upward and downward mass flux
+  (stat_tmf).
+
+- Surface output fields (i.e., accumulated rain and sws) are translated 
+  when the domain is moving (i.e, when imove=1).
+
+
+
+-------------------------------------------------------------
+2.  Changes, fixes, modifications.
+
+- Modified advection, turbulence, and divergence damper codes to include
+  base-state density in vertical derivatives.  This isolates the anelastic
+  divergence term (i.e., continuity equation), as opposed to the previous
+  formulation, which isolated the incompressible continuity equation.
+  This results in a small improvement in mass conservation.
+
+- Modified Goddard microphysics scheme to run on IBM SP with OpenMP.
+  No change in results.
+
+- Fixed bug with saturation adjustment for ice microphysics.
+
+- Fixed minor bug with liquid water component of buoyancy term.
+  (Was previously computing liquid component FIT, rather than Runge-Kutta
+  in time.)
+
+- Modified vertical component of sixth order diffusion code.
+
+- Added artificial diffusion of TKE.  (when idiff=1)
+
+- Modified calcnm subroutine to accomodate ice microphysics.  At temperatures
+  below 253 K, Brunt-Vaisala frequency is computed with respect to ice.
+
+
+

@@ -1,0 +1,185 @@
+
+      integer, parameter :: maxq = 100   ! maximum possible number of
+                                         ! q variables
+
+!--- NOTE to long-time users of CM1 ---!
+!--- the parameters nx,ny,nz,nodex,nodey,terrain_flag, and timestats
+!--- are now specified in namelist.input.  You no longer need to 
+!--- recompile to change these parameters.
+
+!-----------------------------------------------------------------------
+!ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+!ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+!cc                                       cccccccccccccccccccccccccccccc
+!cc   Do not change anything below here   cccccccccccccccccccccccccccccc
+!cc                                       cccccccccccccccccccccccccccccc
+!ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+!ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+!-----------------------------------------------------------------------
+
+      integer ierr
+
+!-----------------------------------
+
+      logical terrain_flag,                                                   &
+              patchsws,patchsww,patchses,patchsee,                            &
+              patchnwn,patchnww,patchnen,patchnee,                            &
+              p2tchsws,p2tchsww,p2tchses,p2tchsee,                            &
+              p2tchnwn,p2tchnww,p2tchnen,p2tchnee,stopit
+      common /paraml/                                                         &
+              terrain_flag,                                                   &
+              patchsws,patchsww,patchses,patchsee,                            &
+              patchnwn,patchnww,patchnen,patchnee,                            &
+              p2tchsws,p2tchsww,p2tchses,p2tchsee,                            &
+              p2tchnwn,p2tchnww,p2tchnen,p2tchnee,stopit
+
+!-----------------------------------------------------------------------
+
+      integer nx,ny,nz,nodex,nodey,timeformat,timestats,                      &
+              ni,nj,nk,nkp1,nkt,ngxy,ngz,                                     &
+              ib,ie,jb,je,kb,ke,                                              &
+              ibm,iem,jbm,jem,kbm,kem,                                        &
+              ibi,iei,jbi,jei,kbi,kei,iice,idm,                               &
+              ibc,iec,jbc,jec,kbc,kec,                                        &
+              ibt,iet,jbt,jet,kbt,ket,                                        &
+              ibp,iep,jbp,jep,kbp,kep,                                        &
+              itb,ite,jtb,jte,ktb,kte,                                        &
+              ipb,ipe,jpb,jpe,kpb,kpe,                                        &
+              ibr,ier,jbr,jer,kbr,ker,nir,njr,nkr,                            &
+              ibb,ieb,jbb,jeb,kbb,keb,                                        &
+              ibl,iel,jbl,jel,                                                &
+              ibzvd,iezvd,jbzvd,jezvd,kbzvd,kezvd,nqzvd,                      &
+              imirror,jmirror,                                                &
+              imp,jmp,kmp,kmt,rmp,cmp,nrain,                                  &
+              numq,nqv,nqc,nqr,nqi,nqs,nqg,                                   &
+              nql1,nql2,nqs1,nqs2,nnc1,nnc2,nbudget,budrain,                  &
+              adapt_dt,irst,rstnum,iconly,hadvorder,vadvorder,ifall,pdscheme, &
+              advweno,idiff,vdiff,mdiff,difforder,imoist,iturb,               &
+              tconfig,bcturbu,bcturbs,dns,                                    &
+              irdamp,hrdamp,psolver,nsound,thsmall,ptype,ihail,iautoc,        &
+              icor,pertcor,neweqts,idiss,efall,rterm,                         &
+              wbc,ebc,sbc,nbc,irbc,roflux,isnd,iwnd,itern,iinit,irandp,       &
+              ibalance,iorigin,axisymm,imove,iptra,npt,iprcl,nparcels,        &
+              stretch_x,stretch_y,stretch_z,                                  &
+              bc_wind,bc_temp,ibw,ibe,ibs,ibn,strlen,baselen,totlen,          &
+              npvals,ifx,ify,ifz,                                             &
+              outfile,myid,numprocs,myi,myj,nf,nu,nv,nw,                      &
+              mywest,myeast,mysouth,mynorth,mysw,mynw,myne,myse,              &
+              cs1we,cs1sn,ct1we,ct1sn,cv1we,cu1sn,cw1we,cw1sn,cs2we,cs2sn,    &
+              cs3we,cs3sn,ct3we,ct3sn,cv3we,cu3sn,cw3we,cw3sn,                &
+              output_format,output_filetype,output_interp,                    &
+              output_rain,output_sws,output_coldpool,output_zs,               &
+              output_basestate,output_sfcflx,output_sfcparams,output_sfcdiags,&
+              output_zh,output_th,output_thpert,output_prs,output_prspert,    &
+              output_pi,output_pipert,output_rho,output_rhopert,output_tke,   &
+              output_km,output_kh,                                            &
+              output_qv,output_qvpert,output_q,output_dbz,                    &
+              output_u,output_upert,output_uinterp,                           &
+              output_v,output_vpert,output_vinterp,output_w,output_winterp,   &
+              output_vort,output_uh,output_pblten,output_dissten,             &
+              output_radten,                                                  &
+              s_out,u_out,v_out,w_out,z_out,sout2d,sout3d,                    &
+              stat_w,stat_u,stat_v,stat_rmw,stat_pipert,stat_prspert,         &
+              stat_thpert,stat_q,                                             &
+              stat_tke,stat_km,stat_kh,stat_div,stat_rh,stat_rhi,stat_the,    &
+              stat_cloud,stat_sfcprs,stat_wsp,stat_cfl,stat_vort,             &
+              stat_tmass,stat_tmois,stat_qmass,stat_tenerg,stat_mo,stat_tmf,  &
+              stat_pcn,stat_qsrc,stat_out,                                    &
+              radopt,year,month,day,hour,minute,second,jday,                  &
+              idrag,isfcflx,sfcmodel,oceanmodel,ipbl,initsfc,lu0,season,      &
+              cecd,pertflx,isftcflx,iz0tlnd,convinit
+      common /parami/                                                         &
+              nx,ny,nz,nodex,nodey,timeformat,timestats,                      &
+              ni,nj,nk,nkp1,nkt,ngxy,ngz,                                     &
+              ib,ie,jb,je,kb,ke,                                              &
+              ibm,iem,jbm,jem,kbm,kem,                                        &
+              ibi,iei,jbi,jei,kbi,kei,iice,idm,                               &
+              ibc,iec,jbc,jec,kbc,kec,                                        &
+              ibt,iet,jbt,jet,kbt,ket,                                        &
+              ibp,iep,jbp,jep,kbp,kep,                                        &
+              itb,ite,jtb,jte,ktb,kte,                                        &
+              ipb,ipe,jpb,jpe,kpb,kpe,                                        &
+              ibr,ier,jbr,jer,kbr,ker,nir,njr,nkr,                            &
+              ibb,ieb,jbb,jeb,kbb,keb,                                        &
+              ibl,iel,jbl,jel,                                                &
+              ibzvd,iezvd,jbzvd,jezvd,kbzvd,kezvd,nqzvd,                      &
+              imirror,jmirror,                                                &
+              imp,jmp,kmp,kmt,rmp,cmp,nrain,                                  &
+              numq,nqv,nqc,nqr,nqi,nqs,nqg,                                   &
+              nql1,nql2,nqs1,nqs2,nnc1,nnc2,nbudget,budrain,                  &
+              adapt_dt,irst,rstnum,iconly,hadvorder,vadvorder,ifall,pdscheme, &
+              advweno,idiff,vdiff,mdiff,difforder,imoist,iturb,               &
+              tconfig,bcturbu,bcturbs,dns,                                    &
+              irdamp,hrdamp,psolver,nsound,thsmall,ptype,ihail,iautoc,        &
+              icor,pertcor,neweqts,idiss,efall,rterm,                         &
+              wbc,ebc,sbc,nbc,irbc,roflux,isnd,iwnd,itern,iinit,irandp,       &
+              ibalance,iorigin,axisymm,imove,iptra,npt,iprcl,nparcels,        &
+              stretch_x,stretch_y,stretch_z,                                  &
+              bc_wind,bc_temp,ibw,ibe,ibs,ibn,strlen,baselen,totlen,          &
+              npvals,ifx,ify,ifz,                                             &
+              outfile,myid,numprocs,myi,myj,nf,nu,nv,nw,                      &
+              mywest,myeast,mysouth,mynorth,mysw,mynw,myne,myse,              &
+              cs1we,cs1sn,ct1we,ct1sn,cv1we,cu1sn,cw1we,cw1sn,cs2we,cs2sn,    &
+              cs3we,cs3sn,ct3we,ct3sn,cv3we,cu3sn,cw3we,cw3sn,                &
+              output_format,output_filetype,output_interp,                    &
+              output_rain,output_sws,output_coldpool,output_zs,               &
+              output_basestate,output_sfcflx,output_sfcparams,output_sfcdiags,&
+              output_zh,output_th,output_thpert,output_prs,output_prspert,    &
+              output_pi,output_pipert,output_rho,output_rhopert,output_tke,   &
+              output_km,output_kh,                                            &
+              output_qv,output_qvpert,output_q,output_dbz,                    &
+              output_u,output_upert,output_uinterp,                           &
+              output_v,output_vpert,output_vinterp,output_w,output_winterp,   &
+              output_vort,output_uh,output_pblten,output_dissten,             &
+              output_radten,                                                  &
+              s_out,u_out,v_out,w_out,z_out,sout2d,sout3d,                    &
+              stat_w,stat_u,stat_v,stat_rmw,stat_pipert,stat_prspert,         &
+              stat_thpert,stat_q,                                             &
+              stat_tke,stat_km,stat_kh,stat_div,stat_rh,stat_rhi,stat_the,    &
+              stat_cloud,stat_sfcprs,stat_wsp,stat_cfl,stat_vort,             &
+              stat_tmass,stat_tmois,stat_qmass,stat_tenerg,stat_mo,stat_tmf,  &
+              stat_pcn,stat_qsrc,stat_out,                                    &
+              radopt,year,month,day,hour,minute,second,jday,                  &
+              idrag,isfcflx,sfcmodel,oceanmodel,ipbl,initsfc,lu0,season,      &
+              cecd,pertflx,isftcflx,iz0tlnd,convinit
+
+!-----------------------------------------------------------------------
+
+      real dx,dy,dz,dtl,timax,tapfrq,rstfrq,statfrq,prclfrq,prcltim,          &
+           kdiff2,kdiff6,fcor,kdiv,alph,rdalpha,zd,xhd,umove,vmove,           &
+           v_t,l_h,l_v,cnstce,cnstcd,                                         &
+           dx_inner,dx_outer,nos_x_len,tot_x_len,                             &
+           dy_inner,dy_outer,nos_y_len,tot_y_len,                             &
+           ztop,str_bot,str_top,dz_bot,dz_top,                                &
+           ptc_top,ptc_bot,viscosity,pr_num,                                  &
+           rdx,rdy,rdz,rdx2,rdy2,rdz2,rdx4,rdy4,rdz4,                         &
+           minx,maxx,miny,maxy,maxz,zt,                                       &
+           sfctheta,thec_mb,qt_mb,smeps,tsmall,cflmax,                        &
+           var1,var2,var3,var4,var5,var6,var7,var8,var9,var10,                &
+           dtrad,ctrlat,ctrlon,                                               &
+           tsk0,tmn0,xland0,oml_hml0,oml_gamma,                               &
+           dmax,zdeep,lamx,lamy,xcent,ycent,aconv,convtime,                   &
+           min_dx,min_dy,min_dz,max_dx,max_dy,max_dz
+      common /paramr/                                                         &
+           dx,dy,dz,dtl,timax,tapfrq,rstfrq,statfrq,prclfrq,prcltim,          &
+           kdiff2,kdiff6,fcor,kdiv,alph,rdalpha,zd,xhd,umove,vmove,           &
+           v_t,l_h,l_v,cnstce,cnstcd,                                         &
+           dx_inner,dx_outer,nos_x_len,tot_x_len,                             &
+           dy_inner,dy_outer,nos_y_len,tot_y_len,                             &
+           ztop,str_bot,str_top,dz_bot,dz_top,                                &
+           ptc_top,ptc_bot,viscosity,pr_num,                                  &
+           rdx,rdy,rdz,rdx2,rdy2,rdz2,rdx4,rdy4,rdz4,                         &
+           minx,maxx,miny,maxy,maxz,zt,                                       &
+           sfctheta,thec_mb,qt_mb,smeps,tsmall,cflmax,                        &
+           var1,var2,var3,var4,var5,var6,var7,var8,var9,var10,                &
+           dtrad,ctrlat,ctrlon,                                               &
+           tsk0,tmn0,xland0,oml_hml0,oml_gamma,                               &
+           dmax,zdeep,lamx,lamy,xcent,ycent,aconv,convtime,                   &
+           min_dx,min_dy,min_dz,max_dx,max_dy,max_dz
+
+!-----------------------------------------------------------------------
+
+      character*70 output_path,output_basename,string,sstring,statfile
+      common /paramc/                                                         &
+                   output_path,output_basename,string,sstring,statfile
+

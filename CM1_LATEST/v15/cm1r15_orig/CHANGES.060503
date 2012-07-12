@@ -1,0 +1,74 @@
+
+CM1 version 1 release 10:  3 May 2006.
+
+Summary of changes.
+
+
+-------------------------------------------------------------
+1.  New options/features.
+
+ - Added ability to use different order for the horizontal and vertical
+   advection.  In namelist.input, the flag "advorder" has been replaced
+   with two new flags:  "hadvorder" and "vadvorder". 
+
+ - Added a new option, "iorigin", which specifies the location of the
+   origin in horizontal space.  For iorigin = 1, the origin is at the 
+   bottom-left corner of the domain;  this is the original formulation.
+   For iorigin = 2, the origin is at the center of the domain;  this is
+   a new option, which is recommended for simulations that require
+   perfect symmetry about the center of the domain.
+
+ - Added the ability to use the incompressible equations:  psolver = 5.
+
+ - Added the ability to run with double precision (CompileType = 11 and 12).
+   For now, this only works on Linux machines using the Portland Group 
+   compiler (and without MPI).  
+
+
+-------------------------------------------------------------
+2.  Changes, fixes, modifications, etc.
+
+ - Fixed a bug in advection subroutines for simulations with terrain,
+   as well as a similar bug in the subgrid turbulence code with terrain
+   only.  Probably a small effect.
+   (Thanks to Marcello Miglietta and Richard Rotunno for forcing me
+    to find these.)
+   (adv5, adv6, turbw)
+
+ - Fixed a problem that would cause nasty things to happen if the user
+   had chosen negative values for umove and/or vmove.  No problems in 
+   earlier version if umove and vmove were positive or zero.
+   (Thanks to Leigh Orf for finding this problem.)
+   (movesfc)
+
+ - Fixed a bug with interpolated output (_i files) for simulations using
+   terrain and stretched vertical grid.  No problems in earlier versions
+   if stretch_z was not used.
+   (Thanks to Marcello Miglietta for finding this.)
+   (zinterp)
+
+ - Fixed a minor problem that could cause the model to crash if the
+   Rayleigh damping layer is specified to be above the model top.  No
+   change on results as long as the Rayleigh damper is inside the domain.
+   (param)
+
+ - Fixed a small bug with Rayleigh damping of w for simulations with
+   terrain.  Dunno if this was a big problem or not, but it's probably
+   a small effect.
+   (param)
+
+ - Fixed a potential bug if the user requests dns = 1.  In previous versions, 
+   this bug was not a problem if the base-state was isentropic.
+   (solve)
+
+ - Removed the tropical cyclone initialization code.  (FYI, I am working 
+   on an initialization code that would be external to the model itself.
+   The TC code will go in there.  If you need this code now, then contact
+   George.)
+   (init3d)
+
+ - Improved the performance of the anelastic and incompressible solvers
+   (psolver = 4,5) by avoiding some unnecessary calculations.
+   (solve, integthrk)
+
+

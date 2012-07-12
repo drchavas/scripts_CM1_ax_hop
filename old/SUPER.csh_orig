@@ -1,0 +1,164 @@
+#!/bin/csh
+
+
+## USER INPUT: INITIAL CONDITIONS ##########
+set r0s          = ('2000000.0')  # outer radius of vortex, where V=0 [km]
+
+set r0drmaxs     = ('5.0')  # r0/rmax [-]
+#set vmaxs        = ('12.5' '0.0')  # max wind speed in vortex [m/s]
+set vmaxs        = ('12.5')  # max wind speed in vortex [m/s]
+set zcs          = ('4375.0')  # height of center of vortex above ground [m]; NOTE:dz=1.25km, z0=.625km
+set dz0s         = ('2375.0')  # vertical scale of vortex edge from center [m]
+
+set rc_qvs       = ('0.0')  # radius of center of anomaly [km]
+
+#set r0_qvs       = ('50000.0' '100000.0' '200000.0' '400000.0' '600000.0' '800000.0' '1200000.0' '1600000.0' '2000000.0')  # outer radius of anomaly [km]
+set r0_qvs       = ('200000.0')  # outer radius of anomaly [km]
+
+#set rhpert_maxs  = ('0.3' '0.0')  # max relative humidity perturbation (%); 0.01455 kg/kg --> RH=80% at lowest level
+set rhpert_maxs  = ('0.3')  # max relative humidity perturbation (%); 0.01455 kg/kg --> RH=80% at lowest level
+set zc_qvs       = ('4375.0')  # height of center of bubble above ground [m]
+set dz0_qvs      = ('2375.0')  # vertical scale of bubble edge from center [m]
+set shape_qvs    = ('2')    # 1=gaussian, 2=constant
+
+set z_bltop      = '2000.0'  #CONSTANT height of boundary layer top [m] (initial perturbations = 0 below this height)
+set fcor         = '.00005'  #CONSTANT coriolis parameter [s-1]
+################################################################################
+
+#Control parameter values (for purpose of naming output directories)
+set CTRL_r0          = '400000.0'  # outer radius of vortex, where V=0 [km]
+set CTRL_r0drmax     = '5.0'  # r0/rmax [-]
+set CTRL_vmax        = '12.5'  # max wind speed in vortex [m/s]
+set CTRL_zc          = '4375.0'  # height of center of vortex above ground [m]
+set CTRL_dz0         = '2375.0'  # vertical scale of vortex edge from center [m]
+set CTRL_rc_qv       = '0.0'  # radius of center of anomaly [km]
+set CTRL_r0_qv       = '200000.0'  # outer radius of anomaly [km]
+set CTRL_rhpert_max  = '0.3'  # max relative humidity perturbation (%); 0.01455 kg/kg --> RH=80% at lowest level
+set CTRL_zc_qv       = '4375.0'  # height of center of bubble above ground [m]
+set CTRL_dz0_qv      = '2375.0'  # vertical scale of bubble edge from center [m]
+set CTRL_shape_qv    = '2'    # 1=gaussian, 2=constant
+
+
+
+#loop over everything
+foreach r0 (${r0s})
+foreach r0drmax (${r0drmaxs})
+foreach vmax (${vmaxs})
+foreach zc (${zcs})
+foreach dz0 (${dz0s})
+foreach rc_qv (${rc_qvs})
+foreach r0_qv (${r0_qvs})
+foreach rhpert_max (${rhpert_maxs})
+foreach zc_qv (${zc_qvs})
+foreach dz0_qv (${dz0_qvs})
+foreach shape_qv (${shape_qvs})
+
+#name output simulation directory
+set outdir = 'CTRL'
+
+if ($r0 != $CTRL_r0) then
+  set temp = `echo "$r0"| cut -d . -f 1`	#take the integer only
+  set outdir = "${outdir}ro${temp}"
+else
+endif
+if ($r0drmax != $CTRL_r0drmax) then
+  set temp = `echo "$r0drmax"| cut -d . -f 1`	#take the integer only
+  set outdir = "${outdir}rodrm${temp}"
+else
+endif
+if ($vmax != $CTRL_vmax) then
+  set temp = `echo "$vmax"| cut -d . -f 1`	#take the integer only
+  set outdir = "${outdir}v${temp}"
+else
+endif
+if ($zc != $CTRL_zc) then
+  set temp = `echo "$zc"| cut -d . -f 1`	#take the integer only
+  set outdir = "${outdir}zc${temp}"
+else
+endif
+if ($dz0 != $CTRL_dz0) then
+  set temp = `echo "$dz0"| cut -d . -f 1`	#take the integer only
+  set outdir = "${outdir}dz${temp}"
+else
+endif
+if ($rc_qv != $CTRL_rc_qv) then
+  set temp = `echo "$rc_qv"| cut -d . -f 1`	#take the integer only
+  set outdir = "${outdir}qrc${temp}"
+else
+endif
+if ($r0_qv != $CTRL_r0_qv) then
+  set temp = `echo "$r0_qv"| cut -d . -f 1`	#take the integer only
+  set outdir = "${outdir}qro${temp}"
+else
+endif
+if ($rhpert_max != $CTRL_rhpert_max) then
+  set temp = `echo "$rhpert_max"| cut -d . -f 2`	#take the decimal only
+  set outdir = "${outdir}qrh${temp}"
+else
+endif
+if ($zc_qv != $CTRL_zc_qv) then
+  set temp = `echo "$zc_qv"| cut -d . -f 1`	#take the integer only
+  set outdir = "${outdir}qzc${temp}"
+else
+endif
+if ($dz0_qv != $CTRL_dz0_qv) then
+  set temp = `echo "$dz0_qv"| cut -d . -f 1`	#take the integer only
+  set outdir = "${outdir}qdz${temp}"
+else
+endif
+if ($shape_qv != $CTRL_shape_qv) then
+  set temp = `echo "$shape_qv"| cut -d . -f 1`	#take the integer only
+  set outdir = "${outdir}qsh${temp}"
+else
+endif
+
+#save output directory name in a file for use by run_CM1 program
+
+set runnum = '1'
+if (! -e ~/CM1ax1.active) then
+	set runnum = '1'
+else if (! -e ~/CM1ax2.active) then
+	set runnum = '2'
+else if (! -e ~/CM1ax3.active) then
+	set runnum = '3'
+else if (! -e ~/CM1ax4.active) then
+	set runnum = '4'
+else if (! -e ~/CM1ax5.active) then
+	set runnum = '5'
+else if (! -e ~/CM1ax6.active) then
+	set runnum = '6'
+else if (! -e ~/CM1ax7.active) then
+	set runnum = '7'
+else if (! -e ~/CM1ax8.active) then
+	set runnum = '8'
+else if (! -e ~/CM1ax9.active) then
+	set runnum = '9'
+else if (! -e ~/CM1ax10.active) then
+	set runnum = '10'
+else
+	echo 'TOO MANY RUNS!'
+endif
+
+echo $runnum > ~/runnum.info
+
+echo $outdir > ~/outdir.info
+
+cp namelist.input ~/CM1_ax${runnum}/v15/CM1_pgi/run/.
+cp input_sounding ~/CM1_ax${runnum}/v15/CM1_pgi/run/.
+
+#run simulation + post process
+./MASTER.csh $r0 $r0drmax $vmax $zc $dz0 $rc_qv $r0_qv $rhpert_max $zc_qv $dz0_qv $shape_qv $z_bltop $fcor $outdir $runnum
+
+
+end
+end
+end
+end
+end
+end
+end
+end
+end
+end
+end
+

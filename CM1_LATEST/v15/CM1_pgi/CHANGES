@@ -1,0 +1,134 @@
+
+CM1 Numerical Model, release 15  (cm1r15):  
+13 January 2011
+
+Summary of changes.
+
+-------------------------------------------------------------
+1.  New options/features.
+
+ - An atmospheric radiation scheme (longwave and shortwave) has been
+   added.  (radopt = 1)  (See param11 section of README.namelist for more 
+   information.)
+
+ - A land-surface model (sfcmodel = 2) and an ocean model (oceanmodel = 2)
+   have been added.  (See param12 section of README.namelist for more 
+   information.)
+
+ - A planetary boundary layer parameterization (ipbl = 1) has been added.   
+   (See param 12 section of README.namelist for more information.)
+
+ - The ability to use adaptive timestepping (adapt_dt = 1) has bee added.  
+   This scheme will automatically adjust the timestep to maintain numerical 
+   stability based on maximum Courant number in the domain.  NOTE:  The 
+   timestep dtl must still be set to a reasonable value because it serves 
+   as the initial timestep.  See README.namelist for more information.
+
+ - Added a forced-convergence initialization scheme (Loftus et al. 2008).
+   Choose iinit = 9, and set appropriate parameters in init3d.F.
+
+ - HDF output (output_format=3,4,5) now uses HDF5.  Many thanks to 
+   Leigh Orf (Central Michigan University) for writing and providing this 
+   code.  
+
+ - Added extra surface "swaths" to output files (for output_sws = 1):
+      svs = maximum vertical vorticity at lowest model level
+      sps = minimum pressure at lowest model level
+      srs = maximum rainwater mixing ratio at lowest model level
+      sgs = maximum graupel/hail mixing ratio at lowest model level
+      sus = maximum w at 5 km AGL (i.e., maximum updraft swath)
+      shs = maximum integrated updraft helicity swath
+
+ - Added vertically integrated updraft helicity (UH) as an output variable
+   (when output_uh=1).  By default, the code integrates UH between 1--6 km
+   AGL.  
+
+ - Added composite reflectivity (i.e., max reflectivity in the column) as 
+   an output variable (when output_dbz = 1).
+
+ - Added cold pool intensity (C) and cold pool depth (h) as output variables
+   (when output_coldpool = 1).
+
+ - Added three components of vorticity as 3D output variables
+   (when output_vort = 1). 
+
+ - A large number of surface parameters (like land/ocean temperature) and 
+   surface-layer diagnostics (like 10-m winds and 2-m temperature) can be 
+   included as output (for output_sfcparams = 1 and/or output_sfcdiags = 1).
+
+ - Added ability to output several tendency terms, including:
+     - tendencies from the PBL parameterization  (output_pblten = 1)
+     - dissipative heating tendency  (output_dissten = 1)
+     - radiative heating/cooling tendencies (sw and lw)  (output_radten = 1)
+
+ - Added calculations of CAPE, CIN, LCL, LFC, and EL for the initial sounding. 
+
+ - Added some new pre-configured namelists to the CM1 webpage.  See:
+   http://www.mmm.ucar.edu/people/bryan/cm1/namelists/
+
+
+-------------------------------------------------------------
+2.  Changes, fixes, modifications, etc.
+
+ - Variables associated with surface modeling have been moved in the
+   namelist.input file, and are now grouped together in the param12 section.
+   See README.namelist for more information. 
+   (namelist.input)
+
+ - Made many performance enhancements in the primary solver.  Results should
+   be very similar to cm1r14. 
+   (solve.F, sound.F, sounde.F, adv5.F, adv6.F, turbtke.F, comm.F)
+   (integ.F and rdamp.F have been eliminated)
+
+ - The vertically implicit diffusion scheme is no longer a user-selected 
+   option in CM1.  The code now checks each column to see if implicit 
+   diffusion is needed in the vertical.
+   (turbtke.F,solve.F)
+
+ - Added ability to maintain horizontally homogeneous relative humidity 
+   (instead of horizontally homogeneous water-vapor mixing ratio) for some 
+   3d initialization options.  Look for "maintain_rh" flag in init3d.F file.
+   (init3d.F)
+
+ - Moved code that defines initial terrain to its own file:  init_terrain.F
+   (param.F, init_terrain.F)
+
+ - Created a code to define initial state of surface/ocean:  init_surface.F
+   (param.F, init_surface.F)
+
+ - Changed default compiler flags for the Intel fortran compiler to fix
+   problem with reproducibility.  Thanks to Leigh Orf (Central Michigan)
+   for finding this solution.
+   (Makefile)
+
+ - Updated Morrison microphysics scheme to increase performance (very 
+   small change in results) and made changes following Morrison and 
+   Milbrandt, 2011, MWR, in press) including explicit treatment of 
+   raindrop breakup, and accelerated melting of hail.  Many thanks to 
+   Hugh Morrison (NCAR/MMM) for providing this code. 
+   (morrison.F,param.F)
+
+ - Updated the Thompson microphysics scheme.  Many thanks to Greg Thompson
+   (NCAR/RAL) for providing this code.
+   (thompson.F)
+
+ - Fixed bug when using neweqts = 1,2 with the Thompson and Morrison 
+   microphysics schemes.  (Does not affect any other microphysics schemes, 
+   and only affects results if neweqts=1,2)
+   (solve.F,thompson.F,morrison.F)
+
+ - Changed the formulation of the fifth-order advection calculation to use
+   the sign() operator rather than if-then-else formulation, but only
+   when using IBM/xlf compiler.  The new formulation seems to be faster on
+   IBM machines (e.g., NCAR's bluefire) and the old formulation seems to
+   faster on most other machines. 
+   (adv5.F)
+
+ - Fixed a bug with the output of zh when using terrain and stretched vertical
+   grids.  (GrADS format only.)  This change fixes the problem with the 
+   "mtn.gs" script.
+   (writeout.F)
+
+ - Fixed platform-independent timer.  (Maybe.  I think.  We'll see.)
+   (misclibs.F)
+

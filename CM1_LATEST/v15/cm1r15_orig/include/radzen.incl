@@ -1,0 +1,9 @@
+
+!-----------------------------------------------------------------------
+!  for zenangl:
+
+  real, parameter :: pi  = 3.14159265358979323
+  real ::     hour0, pi2, deg2rad, yrday, rad2deg
+  integer ::  nxmid, nymid, source
+  common /radzen/ hour0, pi2, deg2rad, yrday, rad2deg, nxmid, nymid, source
+

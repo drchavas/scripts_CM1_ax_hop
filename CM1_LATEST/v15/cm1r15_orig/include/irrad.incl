@@ -1,0 +1,14 @@
+
+  INTEGER :: nx,no,nc,nh,nt
+  PARAMETER (nx=26,no=21,nc=24,nh=31,nt=7)
+
+  REAL :: c1 (nx,nc,nt),c2 (nx,nc,nt),c3 (nx,nc,nt)
+  REAL :: o1 (nx,no,nt),o2 (nx,no,nt),o3 (nx,no,nt)
+  REAL :: h11(nx,nh,nt),h12(nx,nh,nt),h13(nx,nh,nt)
+  REAL :: h21(nx,nh,nt),h22(nx,nh,nt),h23(nx,nh,nt)
+  REAL :: h71(nx,nh,nt),h72(nx,nh,nt),h73(nx,nh,nt)
+
+  COMMON /radtab001/ h11,h12,h13,h21,h22,h23,h71,h72,h73
+  COMMON /radtab002/ c1,c2,c3
+  COMMON /radtab003/ o1,o2,o3
+

@@ -1,0 +1,168 @@
+
+CM1 version 1 release 12:  12 August 2008.
+
+Summary of changes.
+
+-------------------------------------------------------------
+1.  New options/features.
+
+ - Added ability to run an axisymmetric version of the model (axisymm=1).
+   See README.axisymm for more information.
+
+ - Added ability to include dissipative heating (idiss=1).  This improves
+   energy conservation in the model.
+
+ - Added the Morrison et al (2005, JAS, pg 1665) double-moment microphysics
+   scheme (ptype=5).
+
+ - Added the ability to use different turbulence coefficients for the 
+   horizontal and vertical directions.  For tconfig=1, the same 
+   coefficients are used;  this was the only option previously, and it is
+   appropriate if dx and dy are approximately the same as dz.  For tconfig=2
+   (new), different coefficients are retrieved and used appropriately; 
+   this is necessary if dx and/or dy are much larger than dz. 
+
+ - Added the ability to integrate potential temperature on the small time 
+   step (thsmall=0,1);  when thsmall=1, the stability for gravity wave 
+   propagation is set by the small time step instead of the large time 
+   step (see Skamarock and Klemp, 1992, MWR, pg 2119).  See
+   README.namelist for more information.
+
+ - Added namelist variables to specify lower/upper boundary conditions 
+   for vertical diffusion.  This includes subgrid turbulence as well as 
+   artificial diffusion.  The variables are called bcturbu for winds 
+   and bcturbs for scalars.  See README.namelist for more information. 
+
+ - Added ability to use rigid wall lateral boundary conditions (bc = 3)
+   when running the anelastic/incompressible solvers (psolver = 4 and 5).
+
+ - Added support for netcdf output.  Use output_format = 2 in
+   namelist.output file.  Thanks to Dan Kirshbaum (U. Reading) for 
+   providing this code.
+
+ - Added support for hdf output.  Use output_format = 3 or 4 in 
+   namelist.output.  See comments at top of writeout_hdf.F for
+   an explanation of the difference between format 3 and 4.  Thanks to 
+   Leigh Orf (Central Michigan University) for providing this code. 
+
+ - Added support for g95 compiler (see Makefile).
+
+ - Added to the cm1 website several useful GrADS scripts.  See
+   http://www.mmm.ucar.edu/people/bryan/cm1/grads/
+
+ - Added to the cm1 website several sample scripts for running cm1 on NCAR's 
+   supercomputers.  See http://www.mmm.ucar.edu/people/bryan/cm1/scripts/
+
+ - Added to the cm1 website several soundings for idealized simulations.
+   See http://www.mmm.ucar.edu/people/bryan/cm1/soundings/
+
+ - Added to the cm1 website everal pre-configured namelist.input files for 
+   idealized simulations.  Currently, there are namelists for a supercell 
+   simulation, a squall line simulation, and an axisymmetric hurricane 
+   simulation.  See http://www.mmm.ucar.edu/people/bryan/cm1/namelists/
+
+ - Added the ability to include the base-state fields in the output file.
+   Use output_basestate=1.
+
+ - Added the ability to write one output file per output time 
+   (output_filetype=2).  See README.namelist for more information.
+
+ - Merged all namelists into a single file:  namelist.input
+   (removed namelist.output and namelist.stats)
+
+ - Added 10 flex variables (var1,var2,var3 ... var10) in the namelist.input
+   file.  Users can use these variables to easily change parameters in the 
+   model without re-compiling the code.  See README.namelist for more 
+   details.
+
+ - Included several schemes to run the idealized hurricane simulations 
+   of Rotunno and Emanuel (1987, JAS, p. 542), including:
+     - a Smagorinsky-type turbulence scheme for axisymmetric models (iturb=3)
+       (user must set l_h and l_v in namelist.input)
+     - a simple microphysics parameterization (ptype=6)
+       (user must set v_t in namelist.input)
+     - a simple relaxation term to mimic atmospheric radiation (rterm=1)
+     - ability to include Rayleigh damping near lateral boundaries (hrdamp=1)
+     - a tropical cyclone initialization method (that works correctly
+       for distributed memory (MPI) simulations) (iinit=7)
+     - (Note: a namelist.input file for RE87-type simulations is available
+        on the CM1 website.  See:  
+        http://www.mmm.ucar.edu/people/bryan/cm1/namelists/ )
+
+ - Added ability to include horizontal grid stretching near one boundary
+   only (stretch_x=2 and stretch_y=2).
+
+ - Added a general piece of code to include random perturbations into 
+   initial conditions, which works properly for distributed memory (MPI)
+   runs (irandp=1).
+
+ - Added an analytic base state (isnd=11) that specifies constant 
+   saturated equivalent potential temperature (theta_e).  The formulation 
+   of theta_e can be either pseudoadiabatic or reversible (see code in 
+   base.F).
+
+ - Added ability to specify a constant horizontal wind as an initial
+   base state (iwnd=6).
+
+ - Added option to apply Coriolis acceleration to perturbation winds only
+   (pertcor=1).
+
+ - Added option to calculate surface fluxes using perturbation winds only
+   (pertflx=1).
+
+ - Added ability to change format of text printout of model integration
+   time;  user can now select seconds, minutes, hours, or days. 
+
+ - Added a limiter on subgrid turbulence coefficients to ensure that 
+   numerical stability is not exceeded.  This is usually not activated 
+   unless grid spacing is very large (dx,dy > 10 km,  dz > 1 km).
+
+ - Added ability to include vertical transport of energy associated with 
+   hydro-meteor sedimentation (efall=1).  This improves energy 
+   conservation in the model.
+
+
+-------------------------------------------------------------
+2.  Changes, fixes, modifications, etc.
+
+ - Made some modifications to the elliptic pressure solver to increase 
+   accuracy and efficiency when using the anelastic/incompressible option.
+   (init3d.F, poiss.F) 
+
+ - Changed the location of tke and turbulence coefficients from the 
+   scalar point to the w point.  This improves vertical transport near 
+   boundaries and sharp inversions.  (multiple files)
+
+ - Made several bug fixes in the Thompson microphysics code.  The scheme
+   is now fully supported in MPI mode.  (thompson.F)
+
+ - Changed the Makefile conventions so that the extension ".f90" is used
+   instead of ".f".   This fixes an issue when using case-insensitive
+   operating systems (e.g., certain macs).  (Makefile)
+
+ - Made a minor modification to ensure that more than 1,000 processors 
+   can be used without incident.  (param.F)
+
+ - Modified the stats output so that actual grid point values are included
+   with the max/min stats for MPI runs.  (maxmin.F, misclibs.F)
+
+ - Fixed a bug for mdiff=1 with scalars.  (diff6.F)
+
+ - Modified positive-definite scheme (pdscheme=1) to improve accuracy
+   and efficiency.  (adv6.F)
+
+ - Fixed some minor bugs in ptype=4 (GSR version of LFO scheme).  Code
+   now parallelizes perfectly.  (goddard.F, solve.F)
+
+ - Fixed a minor bug with OpenMP implementation of surface fluxes.
+   (sfcphys.F)
+
+ - Fixed a problem with performance associated with underflows and/or 
+   overflows in the ppi array.  Usually only a problem in early parts
+   of simulations.  (integ.F, sound.F, sounde.F)
+
+ - Made several modifications and improvements to the subgrid turbulence
+   schemes (iturb=1,2), mostly with regards to specification of subgrid 
+   turbulence near the surface. 
+
+

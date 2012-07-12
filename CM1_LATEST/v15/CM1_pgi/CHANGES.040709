@@ -1,0 +1,86 @@
+
+CM1 version 1 release 8:  9 July 2004.
+
+Summary of changes.
+
+
+-------------------------------------------------------------
+1.  New options/features.
+
+- Added horizontal grid stretching.  See README.stretch for more information.
+
+- Added terrain.  There is a variable, "terrain_flag", in "input.incl" that
+  must be set before compliling.  The user can set the terrain profile in
+  "param.F".
+
+- Added the option to use the anelastic equation set.  Richard James (PSU)
+  deserves most of the credit for making this happen.  This option currently
+  has three major limitations:  1) it cannot be used with terrain;  2) it
+  can only be used with periodic boundary conditions;  and 3) it cannot be
+  used with distributed memory (i.e., with MPI).  It can only be parallelized
+  with shared memory, OpenMP right now.
+
+- The variables "implsound" and "kwss" have been removed, and replaced with
+  the variable "psolver", which has four options:
+
+            1) truly compressible
+            2) Klemp-Wilhelmson time-splitting, fully explicit
+            3) Klemp-Wilhelmson time-splitting, vertically implicit
+            4) anelastic
+
+- Added the ability to use an arbitrary number of passive fluid tracers,
+  using the variable "npt" in "namelist.input".
+
+- Added the ability to include passive parcels during the model integration.
+  See variables "iprcl" and "nparcels" in "namelist.input".
+
+- Added the option to use WENO advection on only the final Runge-Kutta
+  step (advweno=2).  This can considerably decrease run times, but is
+  still considered experimental.
+
+- Added a new variable in "namelist.output" called "output_path".  This is
+  the path where you would like to place all of the output files (i.e.,
+  cm1out*.dat, stats.dat, pdata.dat, restart files).
+
+- Added a new variable in "namelist.input" called iautoc.  This allows the
+  user to choose whether or not to include autoconversion of qc to qr when
+  using the ice microphysics scheme.
+
+- Added a new variable in "namelist.input" call roflux.  For roflux=1, the
+  total outward mass flux at open boundary conditions is not allowed to 
+  exceed total inward mass flux.  This is a requirement for the anelastic 
+  solver.  For the compressible solvers, this scheme helps prevent runaway 
+  outward mass flux that can cause domain-total mass loss and pressure falls.
+
+
+-------------------------------------------------------------
+1b.  Notes about the code.
+
+Previous users should note the following changes concerning the code:
+
+- The integer arrays "iid" and "jid" have been replaced by the real
+  arrays "xh" and "yh".
+
+- The base state arrays are now three-dimensional (x-y-z), instead of just
+  one-dimensional (z).  (This change was necessary to accomodate terrain.)
+  However, please keep in mind that the base state is still assumed to be
+  horizontally homogeneous.
+
+
+-------------------------------------------------------------
+2.  Changes, fixes, modifications, etc.
+
+- Fixed the vertical advection bug with vertical grid stretching. (The bug
+  did not affect runs with r7 that had constant vertical grid spacing.)
+
+- The divergence damper for compressible simulations has been modified.
+  It is now similar to the one used in MM5 and WRF.
+
+- Added MPI support for truly compressible solver.
+
+- Modified the horizontal advection formulation near open boundary conditions.
+  The new code minimizes the introduction of noise at inflow boundaries.
+
+- Updated and debugged the tropical cyclone initialization option (iinit=6).
+
+

@@ -1,0 +1,158 @@
+
+CM1 version 1 release 11:  23 October 2006.
+
+Summary of changes.
+
+-------------------------------------------------------------
+1.  New options/features.
+
+ - The model now uses "make" (or "gmake"), which replaces the old "compile"
+   script.  See "README.compile" for more information.  (No effect on 
+   results.)
+
+ - A significant coding change was made to accomodate new microphysics 
+   schemes.  The old hard-wired arrays (e.g., qc, qr, qg, etc) have been 
+   replaced with general arrays (qa, q3d, and qten).  See the document
+   "new_microphysics.pdf" at http://www.mmm.ucar.edu/people/bryan/cm1 for 
+   more information.  (No effect on results.)
+
+ - Two new microphysics schemes have been added:  ptype = 3 is the 
+   Thompson microphysics scheme;  and ptype = 4 is the Gilmore/Straka/
+   Rasmussen (GSR) version of the LFO scheme.  (See README.parallel
+   for notes about using these schemes with OpenMP and/or MPI.)
+   (Note:  ptype=4 does not work with terrain, at the moment)
+
+ - The model now uses dynamic memory allocation for ALL arrays.  Users
+   no longer need to recompile to change domain size.  The variables 
+   nx, ny, nz, nodex, and nodey have been moved to namelist.input.  Users
+   do not have to change anything in "input.incl" anymore.  (No effect 
+   on results.)
+
+ - Added more documentation in the main model directory:
+      README.compile - How to compile cm1
+      README.restart - How to restart cm1
+      README.output - Documentation for the namelist.output file
+      README.2D - Comments and suggestions for two-dimensional simulations
+      README.parcel - Documentation for parcels within cm1 simulations
+      README.parallel - Comments and suggestions for parallel processing
+
+ - Changed the anelastic solver to use the Bannon (1996) equations.
+   Previously, the code used something very similar to the Durran (1989)
+   "psuedo-incompressible" equations.  Note, however, that when using 
+   a compressible solver, and when ibalance=2, then the Durran-like
+   equations are used to define the initial pressure field.
+   (poiss.F, anelp.F)
+
+ - Changed the isnd=7 code to accept WRF Model and Klemp-Wilhelmson Model
+   format external sounding file (named 'input_sounding').  When isnd=7
+   is chosen, the iwnd value is now ignored;  wind profile is obtained 
+   from the sounding.  See inline comments in the isnd=7 section of 
+   base.F for more info.
+
+ - Added an option, "timestats = 2", which outputs timing results for
+   every time step, in addition to the overall timing statistics that 
+   are printed at the end of each simulation.  (No effect on results.)
+
+ - Added a new variable to namelist.input called "ifall", which changes 
+   the algorithm for hydrometeor sedimentation (i.e., fallout).  (This
+   option was available in older versions of the model, but was buried 
+   inside the code, and the user had to recompile to change the algorithm.)
+   See README.namelist for more information.  (No effect on results if 
+   ifall = 3 is chosen.)
+
+ - Added a new variable ... prclfrq ... that specifies the frequency to 
+   output parcel data (if iprcl=1).
+
+ - Added a new variable in namelist.output ... output_basename ... that 
+   allows the user to specify a base filename for output.  Default name 
+   is 'cm1out'.  (Note to ARPS users:  this is similar in concept to 
+   "runname").
+
+ - To prepare for future development, a variable has been added to 
+   namelist.output ... output_format ... that allows the user to choose
+   the format of the output files.  At the moment, only the GrADS-format
+   output is officially supported.
+
+
+-------------------------------------------------------------
+2.  Changes, fixes, modifications, etc.
+
+ - Increased the default value of time off-centering for the vertically 
+   implicit acoustic solver (alph:  was 0.55, now is 0.60).  This helps 
+   solve a problem with numerical stability when dx >> dz.  Also, this
+   variable has been moved into namelist.input, so users can change the
+   value without needing to recompile the code.  (sound.F) 
+
+ - Changed the default value for open-radiative boundary condition
+   (from irbc=1 to irbc=4).  This usually helps with pressure-drift
+   problems.  If pressure drift still happens, users can try 
+   roflux=1.  (namelist.input)
+
+ - Removed the conserved-variable saturated mixing scheme (smix=1).
+   This option may be re-evaluated in the future.
+
+ - Removed isnd=6 option (sounding for tropical cyclone initialization).
+   The option isnd=7 should be used for this sounding, although I haven't
+   gotten around to creating a 'input_sounding' file yet.  (base.F)
+
+ - Fixed a very minor bug with the total moisture diagnostic output variable 
+   for MPI runs.  No effect on results.  (misclibs.F)
+
+ - Made a minor change to ensure that output files (stats.dat and 
+   cm1out_*.dat) and written more often.  This ensures that these files 
+   are retained in the event of a model crash on some machines.  No effect 
+   on results.  (writeout.F, statpack.F)
+
+ - Added time splitting to all sedimentation schemes, when needed (which is 
+   determined in the code, during model run-time).  This helps fix a 
+   problem when fall velocities are large and/or vertical grid spacing is 
+   small.  Little change on results for most simulations.  (kessler.F)
+
+ - Made a bunch of changes to the parcel driver to increase efficiency on 
+   distributed memory systems.  This helps trmendously when a very large 
+   number of parcels are used.  No effect on results.  (parcel.F)
+
+ - Fixed a bug associated with boundary conditions in the parcel driver.
+   For single-processor runs, this only affects parcels that approach a 
+   lateral boundary.  For multiple-processor runs, this has a small effect,
+   but is needed to ensure perfect parallelization.  (parcel.F)
+
+ - Modified the code to have two surface arrays for rn and sws when the 
+   user chooses imove=1; both are also included in the output files. 
+   One is the accumulated field at model grid points, the other 
+   is the accumulated field assuming a translating lower surface.
+   Previously, if the user chose imove=1, only the translating lower 
+   surface result was sent to the output file.  No effect on results.
+   (solve.F, kessler.F, writeout.F)
+
+ - Unified the constants between the varying microphysics schemes, as 
+   well as those seen by the model's solver.  In general, I chose the 
+   value from the Gilmore et al. (2004) supplement.  When a variable 
+   was constant in one scheme but temperature-dependent in another, 
+   I used the constant value at the reference temperature (to = 273.16 K).
+   (Thompson scheme not included, for the moment.)
+   (constants.incl, kessler.F, goddard.F, lfoice.F, lfoice.incl)
+
+ - For the Goddard-LFO scheme, I set the autoconversion of qc to qr back 
+   on as the default value (dunno why it was off by default before), but 
+   increased the autoconversion threshold from 1 g/kg to 2 g/kg.
+   (goddard.F, namelist.input)
+
+ - Modified the Goddard code so that the density of snow was set back to 
+   normal values for calculations of accretion rates between snow-rain and 
+   snow-graupel.  This bug was introduced way back in cm1r5 when the 
+   Potter (1991, JAM) fall velocity modification was introduced.  (goddard.F)
+
+ - Added a piece of code at the end of subroutine "base" to make sure that 
+   the base-state is not statically unstable.  (base.F)
+
+ - Fixed a minor bug with the sfcdrag scheme:  multiplication by rho0 was 
+   not accounting for the grid staggering.  No effect on results if terrain
+   is not used, very small effect on results otherwise.  (sfcphys.F)
+
+ - Fixed a bug with the sfcflux scheme:  need to multiple flux array by 
+   rho0 (to be dimensionally correct).  Small-to-no change on results if 
+   base-state density at surface is near 1 kg/m^3 (which is probably true 
+   for most simulations).  (turbtke.F)
+
+

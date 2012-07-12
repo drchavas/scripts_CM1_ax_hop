@@ -1,0 +1,75 @@
+
+CM1 version 1 release 9:  7 June 2005.
+
+Summary of changes.
+
+
+-------------------------------------------------------------
+1.  New options/features.
+
+ - None.  This is a bug fix release.
+
+
+-------------------------------------------------------------
+2.  Changes, fixes, modifications, etc.
+
+Stuff not related to MPI:
+
+ - Fixed some errors with the isnd = 10 option (base)
+
+ - Fixed a loop index bug in TC initialization code.  Thanks to Justin
+   Arnott (PSU) for finding this.  (init3d)
+
+ - Fixed a minor bug with 6th-order advection near open boundary conditions.
+   (adv6u and adv6v)
+
+ - Set the turbulence coefficients back to the "traditional" values
+   (Ck = 0.10, Pr = 3.00, except for Ce, which now maxes out at 
+   pi*pi*Ck = 0.987).  (turbtke)
+
+ - Set stability (Nm^2) check to be 1.0e-6 instead of zero.  Prevents
+   possible divide by zero on some machines.  (turbtke)
+
+ - Changed moist stability calculation to become active only when both
+   neighboring points are saturated.  (calcnm)
+
+ - Changed turbulence code to diffuse total u and v.  (Previous code
+   diffused the perturbations values.)  (solve)
+
+ - Modified the roflux = 1 option to account for stretched grids.
+   (restrict_openbc_we and restrict_openbc_sn)
+
+ - Fixed a boundary condition issue when a rigid wall boundary condition
+   was used.  (sound and sounde)
+
+
+
+MPI-specific stuff:
+
+ - Fixed a number of minor bugs with the initialization of terrain in
+   MPI mode.  (param, base, and added some new subroutines in comm.F
+   and bc.F)
+
+ - Code now supports pdscheme = 1 with MPI (pdefx, pdefy)
+
+ - Code now properly initializes all stat output to be zero before
+   performing MPI_SUM operations (statpack, and multiple subroutines in
+   misclibs.F)
+
+ - Fixed bug with max cloud top calculation on some machines (cloud)
+
+ - Fixed bug with file sizes.  Code now properly reinitializes all files
+   sizes to be zero when first opened.  (writeout)
+
+ - Fixed bug with interpolated output with terrain option.  Code now
+   properly opens and closes files.  (writeout)
+
+ - Fixed a lower-boundary-condition bug with tke and terrain. (turbs)
+
+ - Made some minor mods to boundary conditions when using MPI.
+   (multiple subroutines in bc.F)
+
+ - Fixed a couple of errors in getting passive tracer support with MPI.
+   (solve, integq, and soundarr.incl)
+
+

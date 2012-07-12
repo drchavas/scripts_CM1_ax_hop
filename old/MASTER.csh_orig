@@ -1,0 +1,113 @@
+#!/bin/csh
+
+## INITIAL CONDITIONS ##########
+set r0          =  $1  # outer radius of vortex, where V=0
+set r0drmax     =  $2  # r0/rmax [-]
+set vmax        =  $3  # max wind speed in vortex
+set zc          =  $4  # height of center of vortex above ground [m]
+set dz0          =  $5  # vertical scale of vortex edge from center [m]
+
+set rc_qv       =  $6  # radius of center of anomaly [m]
+set r0_qv       =  $7  # outer radius of anomaly [m]
+set rhpert_max  =  $8  # max relative humidity perturbation (non-dim); 0.01455 kg/kg --> RH=80% at lowest level
+set zc_qv       =  $9  # height of center of bubble above ground [m]
+set dz0_qv       =  ${10}  # vertical scale of bubble edge from center [m]
+set shape_qv    =  ${11}    # 1=gaussian, 2=constant
+
+set z_bltop     =  ${12}  #CONSTANT height of boundary layer top [m] (initial perturbations = 0 below this height)
+set fcor        =  ${13}  #CONSTANT coriolis parameter [s-1]
+################################################################################
+
+set outdir = ${14}
+set runnum = ${15}
+
+#define some variables
+set model = CM1
+echo $model
+set version = v15
+echo $version
+
+#calculate inputs for RE87 initial vortex that will give desired vmax and rmax
+./vmax_RE.csh $3 $1 $2 ${13} > vm_RE.out
+set rmax_RE = `head -1 vm_RE.out`
+set vmax_RE = `tail -1 vm_RE.out`
+rm vm_RE.out
+
+#Go to CM1 program directory
+cd ~
+set info = 'RUNNING'
+echo $info > CM1ax${runnum}.active	#lets program know that the corresponding model is in use
+cd ./${model}_ax${runnum}/${version}/${model}_pgi/
+
+#adjust initial conditions
+echo "Adjusting initial conditions in init3d.F" 
+
+cp init3d_drc_backup.F init3d_drc.F
+
+sed 's|r0 .*=.* !|r0 = '"${r0}"' !|g' init3d_drc.F > temp_file
+mv temp_file init3d_drc.F
+sed 's|rmax .*=.* !|rmax = '"${rmax_RE}"' !|g' init3d_drc.F > temp_file
+mv temp_file init3d_drc.F
+sed 's|vmax .*=.* !|vmax = '"${vmax_RE}"' !|g' init3d_drc.F > temp_file
+mv temp_file init3d_drc.F
+sed 's|zc .*=.* !|zc = '"${zc}"' !|g' init3d_drc.F > temp_file
+mv temp_file init3d_drc.F
+sed 's|dz0 .*=.* !|dz0 = '"${dz0}"' !|g' init3d_drc.F > temp_file
+mv temp_file init3d_drc.F
+sed 's|rc_qv .*=.* !|rc_qv = '"${rc_qv}"' !|g' init3d_drc.F > temp_file
+mv temp_file init3d_drc.F
+sed 's|r0_qv .*=.* !|r0_qv = '"${r0_qv}"' !|g' init3d_drc.F > temp_file
+mv temp_file init3d_drc.F
+sed 's|rhpert_max .*=.* !|rhpert_max = '"${rhpert_max}"' !|g' init3d_drc.F > temp_file
+mv temp_file init3d_drc.F
+sed 's|zc_qv .*=.* !|zc_qv = '"${zc_qv}"' !|g' init3d_drc.F > temp_file
+mv temp_file init3d_drc.F
+sed 's|dz0_qv .*=.* !|dz0_qv = '"${dz0_qv}"' !|g' init3d_drc.F > temp_file
+mv temp_file init3d_drc.F
+sed 's|shape_qv .*=.* !|shape_qv = '"${shape_qv}"' !|g' init3d_drc.F > temp_file
+mv temp_file init3d_drc.F
+sed 's|z_bltop .*=.* !|z_bltop = '"${z_bltop}"' !|g' init3d_drc.F > temp_file
+mv temp_file init3d_drc.F
+
+#copy updated init3d file into src/ directory
+cp init3d_drc.F src/init3d.F
+
+#recompile
+cd src/
+module add pgi
+module add netcdf
+module add openmpi
+make
+cd ..
+
+############################################################################
+#Pre-Processing
+
+## Output simulation info files into output directory ######
+mkdir /data/drchavas/CM1_output/ax/$outdir
+
+cd ~/${model}_ax${runnum}/${version}/
+
+cp ./${model}_pgi/run/namelist.input /data/drchavas/CM1_output/ax/$outdir/.
+
+cp ./${model}_pgi/run/input_sounding /data/drchavas/CM1_output/ax/$outdir/.
+
+less ./${model}_pgi/src/init3d.F | grep '\!Initial vortex' -A 5 > /data/drchavas/CM1_output/ax/$outdir/ic.info
+echo '' >> /data/drchavas/CM1_output/ax/$outdir/ic.info
+less ./${model}_pgi/src/init3d.F | grep '\!Initial relative humidity anomaly' -A 6 >> /data/drchavas/CM1_output/ax/$outdir/ic.info
+
+#Go to output directory
+cd /data/drchavas/CM1_output/ax/$outdir
+#echo -n "I am currently in directory "; pwd
+
+#output text file listing all differences between namelist.input and namelist.input_CTRL
+diff namelist.input ../namelist.input_CTRL > params_diff.info
+
+
+## Run the PGI program #########
+cd ~/scripts_CM1_ax/
+qsub -T hyperthread run_CM1
+
+
+
+

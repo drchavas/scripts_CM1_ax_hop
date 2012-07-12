@@ -1,0 +1,46 @@
+
+CM1 version 1 release 7:  1 December 2003.
+
+Summary of changes.
+
+
+-------------------------------------------------------------
+1.  New options/features.
+
+- Artificial diffusion scheme now has monotonic option (mdiff = 1).
+  See Xue, 2000, MWR, 2853-2864 for more details.
+
+- Saturated turbulent mixing scheme is now officially included (smix = 1).
+  With this scheme, the conserved variables ice-liquid water potential
+  temperature (theta-il) and total water mixing ratio (qt) are mixed
+  instead of dry potential temperature and the individiual water mixing
+  ratios. Currently, it is formulated for liquid-water conditions only
+  (i.e., ptype = 1 only).
+
+- Added a new method for integrating the new equation set (neweqts = 2).
+  With this option, a provisional saturation adjustment step is performed
+  on the first RK predictor step.  This scheme is preferred over the old
+  (i.e., over neweqts = 1).
+
+- Modified Smagorinsky turbulence closure to have a stability-dependent
+  length-scale, dissipation coefficient, and Prandtl number.  The old
+  option is still available by setting "config = 1" in subrouting 
+  "turbsmag".
+
+
+-------------------------------------------------------------
+2.  Changes, fixes, modifications, etc.
+
+- Modified code to store and integrate perturbation potential temperature
+  (as opposed to total potential temperature).  Now, tha and th3d arrays
+  hold perturbation potential temperature.  Total theta is now (th0+tha)
+  or (th0+th3d).
+
+- Anelastic pressure field at initial time (ibalance = 2) is now supported
+  in parallel (both OpenMP and MPI).
+
+- Made a buttload of performance enhancements (i.e., it go faster now).
+
+- Changed a bunch of other minor things too.
+
+

@@ -1,0 +1,55 @@
+
+CM1 version 1 release 5:  14 August 2003.
+
+Summary of changes.
+
+
+-------------------------------------------------------------
+1.  New options/features.
+
+- Vertically stretched grid spacing is now supported (stretch=1).
+  Please read the README.stretch file for instructions.
+
+- An option has been added to exclude artifical vertical diffusion
+  when idiff=1.  The new switch is vdiff.  See README.namelist for
+  more information.
+
+- Added a new stat field:  stat_qmass.  When this option is chosen,
+  the total mass of the individual water fields is included in the
+  stats file.
+
+
+-------------------------------------------------------------
+2.  Changes, fixes, modifications, etc.
+
+- Changed the definition of saturation vapor pressure w.r.t. both liquid
+  and ice to a more commonly used version.  It is also the same definition
+  that is used in the Goddard ice microphysics code.
+
+- Made a minor modification to the Kessler scheme to accomodate the new
+  definition of saturation vapor pressure (see previous bullet).
+
+- The saturation adjustment scheme for runs with the Goddard scheme was a
+  big mess.  It's better now.
+
+- Made modifications to the Goddard ice microphysics code following
+  Potter (1991, "Improvements to a Commonly Used Cloud Microphysical Bulk
+  Parameterization", JAM, 30, 1040-1042).
+
+- Made a few minor changes in the fallout code to help enforce mass 
+  conservation.
+
+- Modified the subgrid turbulence code so that only perturbation winds
+  contibute to shear production.
+
+- Fixed a minor bug in the calculation of moist Brunt-Vaisala frequency
+  in the turbulence code.  Previously, there was a problem with the 
+  calculation at the surface and upper boundaries.
+
+- Added some code to ensure that the calculation of density potential
+  temperature did not use negative water fields.
+
+- Fixed a bug in the "total moisture" stat involving accumulated surface
+  precipitation.
+
+

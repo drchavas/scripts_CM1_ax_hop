@@ -1,0 +1,27 @@
+
+CM1 Numerical Model, Release 15  (cm1r15)
+13 January 2011
+
+Acknowledgments:
+
+Many people and organizations have contributed to this numerical model by 
+providing code, feedback, and suggestions, or by testing the code on their
+applications.  Especially thanked are Peter Bannon, J. Michael Fritsch, 
+Matthew Gilmore, Richard James, Daniel Kirshbaum, Ted Mansell, Marcello 
+Miglietta, Hugh Morrison, Chris Nowotarski, Leigh Orf, Matt Parker, Richard 
+Rotunno, Gregory Thompson, Lou Wicker, and Bob Wilhelmson.  
+
+Some code in CM1 was adapted from other numerical models, including:
+
+- The Weather Research and Forecasting (WRF) Model
+  (land-surface model, surface layer model, ocean mixed-layer model, 
+   several microphysics schemes)
+
+- The Advanced Regional Prediction System (ARPS), which is developed by the 
+  Center for Analysis and Prediction of Storms at the University of Oklahoma
+  (atmospheric radiation codes)
+
+The National Science Foundation (NSF) has supported George Bryan during the 
+development of this code through grants ATM-9806309 and ATM-0133506 and by 
+NSF's support of the National Center for Atmospheric Research. 
+
